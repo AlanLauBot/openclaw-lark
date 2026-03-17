@@ -102,7 +102,7 @@ export function registerFeishuCalendarCalendarTool(api: OpenClawPluginApi) {
                     },
                     opts,
                   ),
-                { as: 'user' },
+                { as: 'tenant' },
               );
               assertLarkOk(res);
 
@@ -138,7 +138,7 @@ export function registerFeishuCalendarCalendarTool(api: OpenClawPluginApi) {
                     },
                     opts,
                   ),
-                { as: 'user' },
+                { as: 'tenant' },
               );
               assertLarkOk(res);
 
@@ -159,7 +159,7 @@ export function registerFeishuCalendarCalendarTool(api: OpenClawPluginApi) {
               const res = await client.invoke(
                 'feishu_calendar_calendar.primary',
                 (sdk, opts) => sdk.calendar.calendar.primary({}, opts),
-                { as: 'user' },
+                { as: 'tenant' },
               );
               assertLarkOk(res);
 

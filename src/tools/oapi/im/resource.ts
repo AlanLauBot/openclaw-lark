@@ -130,7 +130,7 @@ export function registerFeishuImUserFetchResourceTool(api: OpenClawPluginApi): b
                 opts,
               ),
             {
-              as: 'user',
+              as: 'tenant',
             },
           );
 
