@@ -167,7 +167,7 @@ export function registerFeishuBitableAppTableViewTool(api: OpenClawPluginApi) {
                     },
                     opts,
                   ),
-                { as: 'user' },
+                { as: 'tenant' },
               );
               assertLarkOk(res);
 
@@ -197,7 +197,7 @@ export function registerFeishuBitableAppTableViewTool(api: OpenClawPluginApi) {
                     },
                     opts,
                   ),
-                { as: 'user' },
+                { as: 'tenant' },
               );
               assertLarkOk(res);
 
@@ -230,7 +230,7 @@ export function registerFeishuBitableAppTableViewTool(api: OpenClawPluginApi) {
                     },
                     opts,
                   ),
-                { as: 'user' },
+                { as: 'tenant' },
               );
               assertLarkOk(res);
 
@@ -269,7 +269,7 @@ export function registerFeishuBitableAppTableViewTool(api: OpenClawPluginApi) {
                     },
                     opts,
                   ),
-                { as: 'user' },
+                { as: 'tenant' },
               );
               assertLarkOk(res);
 
@@ -299,7 +299,7 @@ export function registerFeishuBitableAppTableViewTool(api: OpenClawPluginApi) {
                     },
                     opts,
                   ),
-                { as: 'user' },
+                { as: 'tenant' },
               );
               assertLarkOk(res);
 

@@ -97,7 +97,7 @@ export function registerChatMembersTool(api: OpenClawPluginApi) {
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 } as any,
               ),
-            { as: 'user' },
+            { as: 'tenant' },
           );
           assertLarkOk(res);
 

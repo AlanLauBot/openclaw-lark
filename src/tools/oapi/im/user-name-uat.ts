@@ -125,7 +125,7 @@ export async function batchResolveUserNamesAsUser(params: {
             opts,
           ),
         {
-          as: 'user',
+          as: 'tenant',
         },
       );
 
