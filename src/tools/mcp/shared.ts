@@ -10,11 +10,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { OpenClawPluginApi } from 'openclaw/plugin-sdk';
 import type { TSchema } from '@sinclair/typebox';
-import { createToolContext, formatToolResult, registerTool } from '../helpers';
+import { createToolContext, formatToolResult, getFirstAccount, registerTool } from '../helpers';
 import { handleInvokeErrorWithAutoAuth } from '../oapi/helpers';
 import { getUserAgent } from '../../core/version';
 import { mcpDomain } from '../../core/domains';
 import type { LarkBrand } from '../../core/types';
+import type { ToolClient } from '../../core/tool-client';
 
 // ---------------------------------------------------------------------------
 // 类型定义
@@ -146,6 +147,53 @@ function buildAuthHeader(): string | undefined {
   return token.toLowerCase().startsWith('bearer ') ? token : `Bearer ${token}`;
 }
 
+function resolveDomainUrl(brand?: LarkBrand): string {
+  const map: Record<string, string> = {
+    feishu: 'https://open.feishu.cn',
+    lark: 'https://open.larksuite.com',
+  };
+  return map[brand ?? ''] ?? `https://${brand}`;
+}
+
+async function getTenantAccessToken(config: OpenClawPluginApi['config']): Promise<string> {
+  if (!config) {
+    throw new Error('OpenClaw config 未加载，无法获取 tenant_access_token');
+  }
+
+  const account = getFirstAccount(config);
+  if (!account?.appId || !account?.appSecret) {
+    throw new Error('Feishu account appId/appSecret 未配置，无法获取 tenant_access_token');
+  }
+
+  const baseUrl = resolveDomainUrl(account.brand);
+  const url = `${baseUrl}/open-apis/auth/v3/tenant_access_token/internal`;
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'User-Agent': getUserAgent(),
+    },
+    body: JSON.stringify({
+      app_id: account.appId,
+      app_secret: account.appSecret,
+    }),
+  });
+
+  const text = await resp.text();
+  let data: Record<string, unknown>;
+  try {
+    data = JSON.parse(text) as Record<string, unknown>;
+  } catch {
+    throw new Error(`获取 tenant_access_token 返回非 JSON：${text.slice(0, 500)}`);
+  }
+
+  if (!resp.ok || data?.code !== 0 || typeof data?.tenant_access_token !== 'string') {
+    throw new Error(`获取 tenant_access_token 失败: HTTP ${resp.status} ${resp.statusText}, body=${text.slice(0, 1000)}`);
+  }
+
+  return data.tenant_access_token;
+}
+
 // ---------------------------------------------------------------------------
 // MCP JSON-RPC 客户端
 // ---------------------------------------------------------------------------
@@ -162,8 +210,9 @@ export async function callMcpTool(
   name: string,
   args: Record<string, unknown>,
   toolCallId: string,
-  uat: string,
+  uat: string | undefined,
   brand?: LarkBrand,
+  tenantAccessToken?: string,
 ): Promise<unknown> {
   const endpoint = getMcpEndpoint(brand);
   const auth = buildAuthHeader();
@@ -180,10 +229,18 @@ export async function callMcpTool(
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    'X-Lark-MCP-UAT': uat,
     'X-Lark-MCP-Allowed-Tools': name,
     'User-Agent': getUserAgent(),
   };
+  if (uat) {
+    headers['X-Lark-MCP-UAT'] = uat;
+  }
+  if (tenantAccessToken) {
+    headers['X-Lark-MCP-TAT'] = tenantAccessToken;
+    if (!auth) {
+      headers.authorization = `Bearer ${tenantAccessToken}`;
+    }
+  }
   if (auth) headers.authorization = auth;
 
   const res = await fetch(endpoint, {
@@ -214,6 +271,102 @@ export async function callMcpTool(
 // ---------------------------------------------------------------------------
 // Scope 管理
 // ---------------------------------------------------------------------------
+
+function extractTokenFromDocIdInput(input: unknown): string | undefined {
+  if (typeof input !== 'string') return undefined;
+  const s = input.trim();
+  if (!s) return undefined;
+  try {
+    const u = new URL(s);
+    const segs = u.pathname.split('/').filter(Boolean);
+    const idxWiki = segs.indexOf('wiki');
+    if (idxWiki >= 0 && segs[idxWiki + 1]) return segs[idxWiki + 1];
+    const idxDocx = segs.indexOf('docx');
+    if (idxDocx >= 0 && segs[idxDocx + 1]) return segs[idxDocx + 1];
+    const last = segs[segs.length - 1];
+    return last || undefined;
+  } catch {
+    return s;
+  }
+}
+
+function shouldTryLegacyFallback(result: unknown): boolean {
+  if (!isRecord(result) || result.isError !== true) return false;
+  const c0 = Array.isArray(result.content) ? result.content[0] : undefined;
+  const text = isRecord(c0) && typeof c0.text === 'string' ? c0.text : '';
+  if (!text) return false;
+
+  let payload: Record<string, unknown>;
+  try {
+    payload = JSON.parse(text) as Record<string, unknown>;
+  } catch {
+    payload = { error: text };
+  }
+
+  const err = String(payload?.error ?? '');
+  return (
+    err.includes('Legacy document') ||
+    err.includes('/open-apis/docx/v1/documents/') ||
+    err.includes('Failed to get child blocks')
+  );
+}
+
+async function tryFetchLegacyDoc(client: ToolClient, docIdInput: unknown) {
+  const token = extractTokenFromDocIdInput(docIdInput);
+  if (!token) return undefined;
+
+  let docToken = token;
+  let title: string | undefined;
+
+  if (token.startsWith('wiki')) {
+    const nodeRes = await client.invoke(
+      'feishu_wiki_space_node.get',
+      (sdk, opts) => sdk.wiki.space.getNode({ token }, opts),
+      { as: 'tenant' },
+    );
+    const node = nodeRes?.data?.node;
+    if (!node) return undefined;
+    if (node.obj_type !== 'doc') {
+      return undefined;
+    }
+    docToken = node.obj_token;
+    title = node.title;
+  }
+
+  if (!(docToken.startsWith('docus') || docToken.startsWith('doccn') || docToken.startsWith('doc'))) {
+    return undefined;
+  }
+
+  const legacyRes = await client.invokeByPath(
+    'feishu_fetch_doc.default',
+    `/open-apis/doc/v2/${docToken}/content`,
+    { method: 'GET', as: 'tenant' },
+  );
+  const body = legacyRes?.data ?? legacyRes;
+  const raw =
+    typeof body?.content === 'string'
+      ? body.content
+      : typeof body?.raw_content === 'string'
+        ? body.raw_content
+        : typeof body === 'string'
+          ? body
+          : undefined;
+
+  if (!raw) {
+    throw new Error('Legacy doc fallback succeeded but no content field found');
+  }
+
+  return {
+    doc_id: docToken,
+    title: title ?? body?.title,
+    offset: 0,
+    length: raw.length,
+    total_length: raw.length,
+    markdown: raw,
+    message: 'Document fetched successfully (legacy doc fallback)',
+    fallback: 'legacy_doc_v2_content',
+  };
+}
 
 // ---------------------------------------------------------------------------
 // 通用工具注册函数
@@ -249,19 +402,32 @@ export function registerMcpTool<T extends Record<string, unknown>>(
 
           // 通过 invoke 进行权限检查并调用 MCP
           // 严格模式：必须拥有 toolActionKey 所需的所有 scope
-          const result = await client.invoke(
+          let result = await client.invoke(
             config.toolActionKey,
             async (_sdk, _opts, uat) => {
-              // 权限检查已通过，直接使用 invoke 传入的 UAT
+              let tenantAccessToken: string | undefined;
               if (!uat) {
-                throw new Error('UAT not available');
+                try {
+                  tenantAccessToken = await getTenantAccessToken(api.config);
+                } catch {
+                  // 获取 tenant token 失败时仍按原逻辑请求，让服务端返回明确错误
+                }
               }
-              return callMcpTool(config.mcpToolName, p, toolCallId, uat, brand);
+              return callMcpTool(config.mcpToolName, p, toolCallId, uat, brand, tenantAccessToken);
             },
             {
-              as: 'user',
+              as: 'tenant',
             },
           );
+
+          if (config.name === 'feishu_fetch_doc' && shouldTryLegacyFallback(result)) {
+            try {
+              const fb = await tryFetchLegacyDoc(client, (p as { doc_id?: unknown })?.doc_id);
+              if (fb) result = fb;
+            } catch (legacyErr) {
+              log.warn?.(`legacy doc fallback failed: ${legacyErr instanceof Error ? legacyErr.message : String(legacyErr)}`);
+            }
+          }
 
           const duration = Date.now() - startTime;
           log.debug?.(`${config.mcpToolName} succeeded in ${duration}ms`);
