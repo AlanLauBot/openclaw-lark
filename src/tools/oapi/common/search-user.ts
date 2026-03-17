@@ -79,7 +79,7 @@ export function registerSearchUserTool(api: OpenClawPluginApi) {
           const res = await client.invokeByPath('feishu_search_user.default', '/open-apis/search/v1/user', {
             method: 'GET',
             query: requestQuery,
-            as: 'user',
+            as: 'tenant',
           });
           assertLarkOk(res);
 
