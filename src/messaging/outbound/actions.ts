@@ -100,11 +100,104 @@ function parseCardParam(raw: unknown): Record<string, unknown> | undefined {
 interface FeishuSendParams {
   to: string;
   text: string;
-  mediaUrl?: string;
+  mediaUrls: string[];
   fileName?: string;
   replyToMessageId?: string;
   replyInThread: boolean;
   card?: Record<string, unknown>;
+}
+
+interface FeishuSendCompatMediaFields {
+  mediaUrl?: unknown;
+  mediaUrls?: unknown;
+  path?: unknown;
+  paths?: unknown;
+  url?: unknown;
+  filePath?: unknown;
+  filePaths?: unknown;
+  MediaUrl?: unknown;
+  MediaUrls?: unknown;
+  MediaPath?: unknown;
+  MediaPaths?: unknown;
+  mediaPath?: unknown;
+  mediaPaths?: unknown;
+  attachments?: unknown;
+}
+
+function normalizeMediaInputs(value: unknown): string[] {
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    return trimmed ? [trimmed] : [];
+  }
+
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((entry) => normalizeMediaInputs(entry));
+}
+
+function normalizeAttachmentMediaInputs(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((entry) => {
+    if (typeof entry === 'string') {
+      return normalizeMediaInputs(entry);
+    }
+
+    if (typeof entry !== 'object' || entry == null || Array.isArray(entry)) {
+      return [];
+    }
+
+    const attachment = entry as Record<string, unknown>;
+    return [
+      ...normalizeMediaInputs(attachment.path),
+      ...normalizeMediaInputs(attachment.url),
+      ...normalizeMediaInputs(attachment.filePath),
+      ...normalizeMediaInputs(attachment.original_path),
+      ...normalizeMediaInputs(attachment.mediaUrl),
+    ];
+  });
+}
+
+function resolveActionMediaSources(params: Record<string, unknown>): string[] {
+  const compat = params as FeishuSendCompatMediaFields;
+  return [
+    ...normalizeMediaInputs(compat.mediaUrls),
+    ...normalizeMediaInputs(compat.mediaUrl),
+    ...normalizeMediaInputs(compat.MediaUrls),
+    ...normalizeMediaInputs(compat.MediaUrl),
+    ...normalizeMediaInputs(compat.MediaPaths),
+    ...normalizeMediaInputs(compat.MediaPath),
+    ...normalizeMediaInputs(compat.mediaPaths),
+    ...normalizeMediaInputs(compat.mediaPath),
+    ...normalizeMediaInputs(compat.paths),
+    ...normalizeMediaInputs(compat.path),
+    ...normalizeMediaInputs(compat.filePaths),
+    ...normalizeMediaInputs(compat.filePath),
+    ...normalizeMediaInputs(compat.url),
+    ...normalizeAttachmentMediaInputs(compat.attachments),
+  ];
+}
+
+function shouldSuppressRedundantMediaText(text: string, mediaUrls: readonly string[]): boolean {
+  const trimmed = text.trim();
+  if (!trimmed || mediaUrls.length === 0) {
+    return false;
+  }
+
+  return mediaUrls.some((mediaUrl) => {
+    const normalized = mediaUrl.trim();
+    return (
+      trimmed === normalized ||
+      trimmed === `> ${normalized}` ||
+      trimmed === `📎 ${normalized}` ||
+      trimmed === `[File: ${normalized}]` ||
+      trimmed === `[Media: ${normalized}]`
+    );
+  });
 }
 
 /**
@@ -123,11 +216,7 @@ function readFeishuSendParams(
     readStringParam(params, 'text', { allowEmpty: true }) ??
     '';
 
-  const mediaUrl =
-    readStringParam(params, 'media') ??
-    readStringParam(params, 'path') ??
-    readStringParam(params, 'filePath') ??
-    readStringParam(params, 'url');
+  const mediaUrls = resolveActionMediaSources(params);
 
   const fileName = readStringParam(params, 'fileName') ?? readStringParam(params, 'name');
 
@@ -145,7 +234,7 @@ function readFeishuSendParams(
   return {
     to,
     text,
-    mediaUrl: mediaUrl ?? undefined,
+    mediaUrls,
     fileName: fileName ?? undefined,
     replyToMessageId: replyToMessageId ?? undefined,
     replyInThread,
@@ -219,19 +308,19 @@ async function deliverMessage(
   accountId?: string,
   mediaLocalRoots?: readonly string[],
 ) {
-  const { to, text, mediaUrl, fileName, replyToMessageId, replyInThread, card } = sp;
+  const { to, text, mediaUrls, fileName, replyToMessageId, replyInThread, card } = sp;
 
-  const payloadType = card ? 'card' : mediaUrl ? 'media' : 'text';
+  const payloadType = card ? 'card' : mediaUrls.length > 0 ? 'media' : 'text';
   const target = to || replyToMessageId || 'unknown';
 
   log.info(
-    `deliverMessage: type=${payloadType}, target=${target}, ` +
+      `deliverMessage: type=${payloadType}, target=${target}, ` +
       `isReply=${Boolean(replyToMessageId)}, replyInThread=${replyInThread}, ` +
-      `textLen=${text.trim().length}, hasMedia=${Boolean(mediaUrl)}, ` +
+      `textLen=${text.trim().length}, mediaCount=${mediaUrls.length}, ` +
       `fileName=${fileName ?? '(none)'}`,
   );
 
-  if (!text.trim() && !card && !mediaUrl) {
+  if (!text.trim() && !card && mediaUrls.length === 0) {
     log.warn('deliverMessage: no payload, rejecting');
     throw new Error('send requires at least one of: message, card, or media.');
   }
@@ -239,7 +328,7 @@ async function deliverMessage(
   const sendCtx = { cfg, to, replyToMessageId, replyInThread, accountId };
 
   // Send text first if both text and card/media are present.
-  if (text.trim() && (card || mediaUrl)) {
+  if (text.trim() && (card || mediaUrls.length > 0) && !shouldSuppressRedundantMediaText(text, mediaUrls)) {
     log.info(`deliverMessage: sending preceding text ` + `(${text.length} chars) before ${payloadType}`);
     await sendTextLark({ ...sendCtx, text });
   }
@@ -252,7 +341,7 @@ async function deliverMessage(
   }
 
   // Media path — uses uploadAndSendMediaLark directly to support fileName.
-  if (mediaUrl) {
+  if (mediaUrls.length > 0) {
     return await deliverMedia(cfg, sp, accountId, mediaLocalRoots);
   }
 
@@ -271,45 +360,50 @@ async function deliverMedia(
   accountId?: string,
   mediaLocalRoots?: readonly string[],
 ) {
-  const { to, mediaUrl, fileName, replyToMessageId, replyInThread } = sp;
+  const { to, mediaUrls, fileName, replyToMessageId, replyInThread } = sp;
 
-  log.info(`deliverMedia: url=${mediaUrl}, fileName=${fileName ?? '(auto)'}`);
+  log.info(`deliverMedia: count=${mediaUrls.length}, fileName=${fileName ?? '(auto)'}`);
 
-  try {
-    const result = await uploadAndSendMediaLark({
-      cfg,
-      to,
-      mediaUrl,
-      fileName,
-      replyToMessageId,
-      replyInThread,
-      accountId,
-      mediaLocalRoots,
-    });
-    log.info(`deliverMedia: sent, messageId=${result.messageId}`);
-    return jsonResult({ ok: true, messageId: result.messageId, chatId: result.chatId });
-  } catch (err) {
-    const errMsg = err instanceof Error ? err.message : String(err);
-    log.error(`deliverMedia: upload failed for "${mediaUrl}": ${errMsg}`);
+  const warnings: string[] = [];
+  let lastResult: { messageId: string; chatId: string } | undefined;
 
-    // Fallback: send the URL with error reason as a quote above.
-    log.info('deliverMedia: falling back to text link');
-    const fallback = await sendTextLark({
-      cfg,
-      to,
-      text: `> ${mediaUrl}`,
-      replyToMessageId,
-      replyInThread,
-      accountId,
-    });
+  for (const [index, mediaUrl] of mediaUrls.entries()) {
+    try {
+      lastResult = await uploadAndSendMediaLark({
+        cfg,
+        to,
+        mediaUrl,
+        fileName: mediaUrls.length === 1 ? fileName : undefined,
+        replyToMessageId,
+        replyInThread,
+        accountId,
+        mediaLocalRoots,
+      });
+      log.info(`deliverMedia: sent item=${index + 1}, messageId=${lastResult.messageId}`);
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      log.error(`deliverMedia: upload failed for "${mediaUrl}": ${errMsg}`);
 
-    return jsonResult({
-      ok: true,
-      messageId: fallback.messageId,
-      chatId: fallback.chatId,
-      warning: `Media upload failed (${errMsg}). A text link was sent instead.`,
-    });
+      // Fallback: send the URL with error reason as a quote above.
+      log.info('deliverMedia: falling back to text link');
+      lastResult = await sendTextLark({
+        cfg,
+        to,
+        text: `> ${mediaUrl}`,
+        replyToMessageId,
+        replyInThread,
+        accountId,
+      });
+      warnings.push(`Media upload failed for "${mediaUrl}" (${errMsg}). A text link was sent instead.`);
+    }
   }
+
+  return jsonResult({
+    ok: true,
+    messageId: lastResult?.messageId ?? '',
+    chatId: lastResult?.chatId ?? '',
+    ...(warnings.length > 0 ? { warning: warnings.join('\n') } : {}),
+  });
 }
 
 // ---------------------------------------------------------------------------
