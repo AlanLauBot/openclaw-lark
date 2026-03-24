@@ -71,19 +71,6 @@ async function dispatchNormalMessage(
   skillFilter?: string[],
   skipTyping?: boolean,
 ): Promise<void> {
-  const sendDispatchError = async (reason?: string) => {
-    const text = reason?.trim()
-      ? `处理失败：${reason.trim()}\n本轮没有生成新的回复，请重试。`
-      : '处理失败：本轮没有生成新的回复，请重试。';
-    await sendMessageFeishu({
-      cfg: dc.accountScopedCfg,
-      to: dc.ctx.chatId,
-      text,
-      replyToMessageId: replyToMessageId ?? dc.ctx.messageId,
-      accountId: dc.account.accountId,
-      replyInThread: dc.isThread,
-    });
-  };
   // Abort messages should never create streaming cards — dispatch via the
   // plain-text system-command path so the SDK's abort handler can reply
   // without touching CardKit.
@@ -138,20 +125,6 @@ async function dispatchNormalMessage(
     // the streaming card's final update show truncated content.
     await dispatcher.waitForIdle();
 
-    const deliveredAnyReply = queuedFinal || (counts.final ?? 0) > 0 || (counts.block ?? 0) > 0;
-
-    if (!deliveredAnyReply) {
-      log.warn('dispatch completed without a new final reply; sending explicit error status', {
-        sessionKey: effectiveSessionKey,
-        queuedFinal,
-        counts,
-      });
-      await abortCard();
-      await sendDispatchError('本轮未产出新的回复');
-      markDispatchIdle();
-      return;
-    }
-
     markFullyComplete();
     markDispatchIdle();
 
@@ -166,20 +139,6 @@ async function dispatchNormalMessage(
 
     dc.log(`feishu[${dc.account.accountId}]: dispatch complete (queuedFinal=${queuedFinal}, replies=${counts.final})`);
     log.info(`dispatch complete (replies=${counts.final}, elapsed=${ticketElapsed()}ms)`);
-  } catch (err) {
-    const errMsg = err instanceof Error ? err.message : String(err);
-    dc.error(`feishu[${dc.account.accountId}]: dispatch failed: ${errMsg}`);
-    log.error('dispatch failed; sending explicit error status', {
-      sessionKey: effectiveSessionKey,
-      error: errMsg,
-    });
-    try {
-      await abortCard();
-      await dispatcher.waitForIdle();
-    } catch {
-      // best effort cleanup only
-    }
-    await sendDispatchError(errMsg.includes('aborted') ? '处理已中止' : errMsg);
   } finally {
     unregisterActiveDispatcher(queueKey);
   }
