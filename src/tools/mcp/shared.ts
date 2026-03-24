@@ -321,12 +321,21 @@ async function tryFetchLegacyDoc(client: ToolClient, docIdInput: unknown) {
   if (token.startsWith('wiki')) {
     const nodeRes = await client.invoke(
       'feishu_wiki_space_node.get',
-      (sdk, opts) => sdk.wiki.space.getNode({ token }, opts),
+      (sdk, opts) =>
+        sdk.wiki.space.getNode(
+          {
+            params: {
+              token,
+              obj_type: 'wiki',
+            },
+          },
+          opts,
+        ),
       { as: 'tenant' },
     );
     const node = nodeRes?.data?.node;
     if (!node) return undefined;
-    if (node.obj_type !== 'doc') {
+    if (node.obj_type !== 'doc' || !node.obj_token) {
       return undefined;
     }
     docToken = node.obj_token;

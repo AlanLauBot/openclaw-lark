@@ -63,7 +63,9 @@ export type ToolActionKey =
   | 'feishu_bitable_app.list'
   | 'feishu_bitable_app.patch'
   | 'feishu_bitable_app_table.batch_create'
+  | 'feishu_bitable_app_table.batch_delete'
   | 'feishu_bitable_app_table.create'
+  | 'feishu_bitable_app_table.delete'
   | 'feishu_bitable_app_table.list'
   | 'feishu_bitable_app_table.patch'
   | 'feishu_bitable_app_table_field.create'
@@ -78,6 +80,7 @@ export type ToolActionKey =
   | 'feishu_bitable_app_table_record.list'
   | 'feishu_bitable_app_table_record.update'
   | 'feishu_bitable_app_table_view.create'
+  | 'feishu_bitable_app_table_view.delete'
   | 'feishu_bitable_app_table_view.get'
   | 'feishu_bitable_app_table_view.list'
   | 'feishu_bitable_app_table_view.patch'
@@ -93,6 +96,7 @@ export type ToolActionKey =
   | 'feishu_calendar_event.patch'
   | 'feishu_calendar_event.reply'
   | 'feishu_calendar_event.search'
+  | 'feishu_calendar_event_attendee.batch_delete'
   | 'feishu_calendar_event_attendee.create'
   | 'feishu_calendar_event_attendee.list'
   | 'feishu_calendar_freebusy.list'
@@ -133,9 +137,11 @@ export type ToolActionKey =
   | 'feishu_task_task.patch'
   | 'feishu_task_tasklist.add_members'
   | 'feishu_task_tasklist.create'
+  | 'feishu_task_tasklist.delete'
   | 'feishu_task_tasklist.get'
   | 'feishu_task_tasklist.list'
   | 'feishu_task_tasklist.patch'
+  | 'feishu_task_tasklist.remove_members'
   | 'feishu_task_tasklist.tasks'
   | 'feishu_update_doc.default'
   | 'feishu_wiki_space.create'
@@ -189,9 +195,11 @@ export const TOOL_SCOPES: ToolScopeMapping = {
   'feishu_bitable_app.patch': ['base:app:update'],
   'feishu_bitable_app.copy': ['base:app:copy'],
   'feishu_bitable_app_table.create': ['base:table:create'],
+  'feishu_bitable_app_table.delete': ['base:table:delete'],
   'feishu_bitable_app_table.list': ['base:table:read'],
   'feishu_bitable_app_table.patch': ['base:table:update'],
   'feishu_bitable_app_table.batch_create': ['base:table:create'],
+  'feishu_bitable_app_table.batch_delete': ['base:table:delete'],
   'feishu_bitable_app_table_record.create': ['base:record:create'],
   'feishu_bitable_app_table_record.update': ['base:record:update'],
   'feishu_bitable_app_table_record.delete': ['base:record:delete'],
@@ -204,6 +212,7 @@ export const TOOL_SCOPES: ToolScopeMapping = {
   'feishu_bitable_app_table_field.update': ['base:field:read', 'base:field:update'],
   'feishu_bitable_app_table_field.delete': ['base:field:delete'],
   'feishu_bitable_app_table_view.create': ['base:view:write_only'],
+  'feishu_bitable_app_table_view.delete': ['base:view:write_only'],
   'feishu_bitable_app_table_view.get': ['base:view:read'],
   'feishu_bitable_app_table_view.list': ['base:view:read'],
   'feishu_bitable_app_table_view.patch': ['base:view:write_only'],
@@ -219,6 +228,7 @@ export const TOOL_SCOPES: ToolScopeMapping = {
   'feishu_calendar_event.reply': ['calendar:calendar.event:reply'],
   'feishu_calendar_event.instances': ['calendar:calendar.event:read'],
   'feishu_calendar_event.instance_view': ['calendar:calendar.event:read'],
+  'feishu_calendar_event_attendee.batch_delete': ['calendar:calendar.event:update'],
   'feishu_calendar_event_attendee.create': ['calendar:calendar.event:update'],
   'feishu_calendar_event_attendee.list': ['calendar:calendar.event:read'],
   'feishu_calendar_freebusy.list': ['calendar:calendar.free_busy:read'],
@@ -231,7 +241,9 @@ export const TOOL_SCOPES: ToolScopeMapping = {
   'feishu_task_tasklist.list': ['task:tasklist:read', 'task:tasklist:write'],
   'feishu_task_tasklist.tasks': ['task:tasklist:read', 'task:tasklist:write'],
   'feishu_task_tasklist.patch': ['task:tasklist:write'],
+  'feishu_task_tasklist.delete': ['task:tasklist:write'],
   'feishu_task_tasklist.add_members': ['task:tasklist:write'],
+  'feishu_task_tasklist.remove_members': ['task:tasklist:write'],
   'feishu_task_comment.create': ['task:comment:write'],
   'feishu_task_comment.list': ['task:comment:read', 'task:comment:write'],
   'feishu_task_comment.get': ['task:comment:read', 'task:comment:write'],
