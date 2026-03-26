@@ -6,6 +6,12 @@
 
 [中文版](./README.zh.md) | English
 
+> **Custom additions in this branch**
+> Based on the official plugin, this branch mainly adapts the plugin to a **bot/tenant-operated digital employee** model instead of a user-operated personal assistant. The key changes are: document / Sheets / Bitable operations can run as the app itself (`as: "tenant"`) so actions are attributed to the bot rather than an individual user, and a new `feishu_doc_permission` tool is added for granting and managing document permissions.
+>
+> **Why this matters**
+> In our usage, OpenClaw is treated as a virtual employee with its own authority, not merely a wrapper around a human user token. Using bot/tenant identity makes ownership and edits attributable to the app itself, which is important for distinguishing human work from agent work, measuring collaboration and usage, and supporting a department-wide shared OpenClaw setup where multiple teammates build on the same agent workflows.
+
 This is the official Lark/Feishu plugin for OpenClaw, developed and maintained by the Lark/Feishu Open Platform team. It seamlessly connects your OpenClaw Agent to your Lark/Feishu workspace, enabling it to directly read from and write to messages, docs, bases, calendars, tasks, and more.
 
 ## Features
