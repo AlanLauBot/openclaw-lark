@@ -51,7 +51,7 @@
   },
   "openclaw": {
     "extensions": [
-      "./index.js"
+      "./index.mjs"
     ],
     "channel": {
       "id": "openclaw-lark",

@@ -14,6 +14,9 @@
 > 1. 能明确区分“是人做的”还是“是应用做的”，便于统计人机协作时长与用量；
 > 2. 创建文档、编辑记录等行为可直接体现为应用本身的产出，而不是挂在某个用户名下；
 > 3. 适合部门统一使用同一个 OpenClaw，让多人把各自工作流持续整合进同一套 agent 能力中，便于后续扩展到更复杂的团队协作与 agent-to-agent 场景。
+>
+> **本分支安装方式**
+> 将本项目 clone 到 `~/.openclaw/extensions/openclaw-lark` 后，先切换到最新的 `custom/*` 分支，再执行 `npm run build`，然后把 `openclaw.json` 中对应插件配置改为 `openclaw-lark`。
 
 这是 OpenClaw 的官方  Lark/飞书 插件，由 Lark/飞书开放平台团队开发和维护。它将你的 OpenClaw Agent 无缝对接到  Lark/飞书 工作区，赋予其直接读写消息、文档、多维表格、日历、任务等应用的能力。
 
