@@ -160,10 +160,17 @@ export function registerDocPermissionTool(api: OpenClawPluginApi): boolean {
                 (sdk: any, opts: any) =>
                   sdk.drive.v1.permissionMember.transferOwner(
                     {
-                      path: { token: p.file_token, member_id: p.member_id },
-                      params: { type },
-                      data: {
+                      path: { token: p.file_token },
+                      params: {
+                        type,
                         need_notification: p.need_notification,
+                        remove_old_owner: false,
+                        stay_put: false,
+                        old_owner_perm: 'full_access',
+                      },
+                      data: {
+                        member_type: p.member_type ?? 'openid',
+                        member_id: p.member_id,
                       },
                     },
                     opts,
