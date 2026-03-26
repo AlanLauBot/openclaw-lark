@@ -237,11 +237,18 @@ export async function callMcpTool(
   }
   if (tenantAccessToken) {
     headers['X-Lark-MCP-TAT'] = tenantAccessToken;
-    if (!auth) {
-      headers.authorization = `Bearer ${tenantAccessToken}`;
-    }
   }
   if (auth) headers.authorization = auth;
+
+  const debugHeaderSummary = {
+    hasUAT: Boolean(uat),
+    hasTAT: Boolean(tenantAccessToken),
+    hasAuthorization: Boolean(headers.authorization),
+    authorizationSource: auth ? 'buildAuthHeader' : 'none',
+    allowedTool: name,
+    endpoint,
+  };
+  console.info(`[feishu_mcp] request ${name}: ${JSON.stringify(debugHeaderSummary)}`);
 
   const res = await fetch(endpoint, {
     method: 'POST',
@@ -418,10 +425,20 @@ export function registerMcpTool<T extends Record<string, unknown>>(
               if (!uat) {
                 try {
                   tenantAccessToken = await getTenantAccessToken(api.config);
-                } catch {
-                  // 获取 tenant token 失败时仍按原逻辑请求，让服务端返回明确错误
+                } catch (err) {
+                  log.warn?.(`tenant_access_token mint failed for ${config.mcpToolName}: ${err instanceof Error ? err.message : String(err)}`);
                 }
               }
+              log.info?.(
+                `[mcp-auth] ${config.mcpToolName} auth path: ` +
+                  JSON.stringify({
+                    toolActionKey: config.toolActionKey,
+                    as: 'tenant',
+                    hasUAT: Boolean(uat),
+                    hasTAT: Boolean(tenantAccessToken),
+                    brand,
+                  }),
+              );
               return callMcpTool(config.mcpToolName, p, toolCallId, uat, brand, tenantAccessToken);
             },
             {

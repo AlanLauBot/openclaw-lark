@@ -40,7 +40,7 @@ import { getAppGrantedScopes, invalidateAppScopeCache, missingScopes } from './a
 import { getAppOwnerFallback } from './app-owner-fallback';
 import { larkLogger } from './lark-logger';
 import { type ToolActionKey, getRequiredScopes } from './scope-manager';
-import { rawLarkRequest } from './raw-request';
+import { rawLarkRequest, resolveDomainUrl } from './raw-request';
 import { assertOwnerAccessStrict } from './owner-policy';
 import {
   LARK_ERROR,
@@ -199,13 +199,20 @@ export class ToolClient {
     // 3. 决定 token 类型（默认 user，用户可通过 options.as 覆盖）
     const tokenType = options?.as ?? 'user';
 
+    // MCP 文档工具走 tenant 路径时，不应再按 user-oriented doc scopes 触发授权卡。
+    // create-doc / update-doc 实际通过 tenant token 调 MCP，并在服务端处理能力边界；
+    // 这里若继续用静态 doc scopes 做本地预检，会把 tenant 调用误判成缺 user scope。
+    const skipTenantAppScopePrecheck =
+      tokenType === 'tenant' &&
+      (toolAction === 'feishu_create_doc.default' || toolAction === 'feishu_update_doc.default');
+
     // ---- App Granted Scopes 检查（应用已开通的权限）----
     // UAT 调用额外检查 offline_access（OAuth Device Flow 的前提权限），
     // 但不加入 requiredScopes（避免阻断业务 scope 进入用户授权流程）。
     const appCheckScopes = tokenType === 'user' ? [...new Set([...requiredScopes, 'offline_access'])] : requiredScopes;
 
     let appScopeVerified = true;
-    if (appCheckScopes.length > 0) {
+    if (!skipTenantAppScopePrecheck && appCheckScopes.length > 0) {
       const appGrantedScopes = await getAppGrantedScopes(this.sdk, this.account.appId, tokenType);
 
       if (appGrantedScopes.length > 0) {
@@ -286,12 +293,34 @@ export class ToolClient {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async invokeByPath<T = any>(toolAction: ToolActionKey, path: string, options?: InvokeByPathOptions): Promise<T> {
     const fn: InvokeFn<T> = async (_sdk, _opts, uat) => {
+      let accessToken = uat;
+      let tokenType: 'user' | 'tenant' = options?.as === 'tenant' ? 'tenant' : 'user';
+
+      if (!accessToken && options?.as === 'tenant') {
+        const baseUrl = resolveDomainUrl(this.account.brand);
+        const url = `${baseUrl}/open-apis/auth/v3/tenant_access_token/internal`;
+        const resp = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            app_id: this.account.appId,
+            app_secret: this.account.appSecret,
+          }),
+        });
+        const data = (await resp.json()) as { code?: number; tenant_access_token?: string; msg?: string };
+        if (!resp.ok || data.code !== 0 || !data.tenant_access_token) {
+          throw new Error(data.msg || `Failed to get tenant_access_token: HTTP ${resp.status}`);
+        }
+        accessToken = data.tenant_access_token;
+      }
+
       return this.rawRequest<T>(path, {
         method: options?.method,
         body: options?.body,
         query: options?.query,
         headers: options?.headers,
-        accessToken: uat,
+        accessToken,
+        tokenType,
       });
     };
     return this._invokeInternal(toolAction, fn, options);

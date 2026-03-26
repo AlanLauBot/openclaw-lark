@@ -158,7 +158,7 @@ async function resolveToken(
           },
           opts,
         ),
-      { as: 'user' },
+      { as: 'tenant' },
     );
     assertLarkOk(wikiNodeRes);
     const objToken = wikiNodeRes.data?.node?.obj_token;
@@ -191,7 +191,7 @@ async function resolveRange(
   const sheetsRes = await client.invoke(
     apiName,
     (sdk: any, opts: any) => sdk.sheets.spreadsheetSheet.query({ path: { spreadsheet_token: token } }, opts),
-    { as: 'user' },
+    { as: 'tenant' },
   );
   assertLarkOk(sheetsRes);
   const firstSheet = (sheetsRes.data?.sheets ?? [])[0];
@@ -515,12 +515,12 @@ export function registerFeishuSheetTool(api: OpenClawPluginApi): boolean {
                 client.invoke(
                   'feishu_sheet.info',
                   (sdk, opts) => sdk.sheets.spreadsheet.get({ path: { spreadsheet_token: token } }, opts),
-                  { as: 'user' },
+                  { as: 'tenant' },
                 ),
                 client.invoke(
                   'feishu_sheet.info',
                   (sdk, opts) => sdk.sheets.spreadsheetSheet.query({ path: { spreadsheet_token: token } }, opts),
-                  { as: 'user' },
+                  { as: 'tenant' },
                 ),
               ]);
               assertLarkOk(spreadsheetRes);
@@ -578,7 +578,7 @@ export function registerFeishuSheetTool(api: OpenClawPluginApi): boolean {
               }>(
                 'feishu_sheet.read',
                 `/open-apis/sheets/v2/spreadsheets/${token}/values/${encodeURIComponent(range)}`,
-                { method: 'GET', query, as: 'user' },
+                { method: 'GET', query, as: 'tenant' },
               );
 
               if (res.code && res.code !== 0) {
@@ -634,7 +634,7 @@ export function registerFeishuSheetTool(api: OpenClawPluginApi): boolean {
               }>('feishu_sheet.write', `/open-apis/sheets/v2/spreadsheets/${token}/values`, {
                 method: 'PUT',
                 body: { valueRange: { range, values: p.values } },
-                as: 'user',
+                as: 'tenant',
               });
 
               if (res.code && res.code !== 0) {
@@ -685,7 +685,7 @@ export function registerFeishuSheetTool(api: OpenClawPluginApi): boolean {
               }>('feishu_sheet.append', `/open-apis/sheets/v2/spreadsheets/${token}/values_append`, {
                 method: 'POST',
                 body: { valueRange: { range, values: p.values } },
-                as: 'user',
+                as: 'tenant',
               });
 
               if (res.code && res.code !== 0) {
@@ -736,7 +736,7 @@ export function registerFeishuSheetTool(api: OpenClawPluginApi): boolean {
                     },
                     opts,
                   ),
-                { as: 'user' },
+                { as: 'tenant' },
               );
               assertLarkOk(res);
 
@@ -771,7 +771,7 @@ export function registerFeishuSheetTool(api: OpenClawPluginApi): boolean {
                     },
                     opts,
                   ),
-                { as: 'user' },
+                { as: 'tenant' },
               );
               assertLarkOk(createRes);
 
@@ -795,7 +795,7 @@ export function registerFeishuSheetTool(api: OpenClawPluginApi): boolean {
                   const sheetsRes = await client.invoke(
                     'feishu_sheet.create',
                     (sdk, opts) => sdk.sheets.spreadsheetSheet.query({ path: { spreadsheet_token: token } }, opts),
-                    { as: 'user' },
+                    { as: 'tenant' },
                   );
                   assertLarkOk(sheetsRes);
                   const firstSheet = (sheetsRes.data?.sheets ?? [])[0];
@@ -813,7 +813,7 @@ export function registerFeishuSheetTool(api: OpenClawPluginApi): boolean {
                       {
                         method: 'PUT',
                         body: { valueRange: { range, values: allRows } },
-                        as: 'user',
+                        as: 'tenant',
                       },
                     );
 
@@ -866,7 +866,7 @@ export function registerFeishuSheetTool(api: OpenClawPluginApi): boolean {
                     },
                     opts,
                   ),
-                { as: 'user' },
+                { as: 'tenant' },
               );
               assertLarkOk(createRes);
 
@@ -888,7 +888,7 @@ export function registerFeishuSheetTool(api: OpenClawPluginApi): boolean {
                 const pollRes = await client.invoke(
                   'feishu_sheet.export',
                   (sdk, opts) => sdk.drive.exportTask.get({ path: { ticket }, params: { token } }, opts),
-                  { as: 'user' },
+                  { as: 'tenant' },
                 );
                 assertLarkOk(pollRes);
 
@@ -919,7 +919,7 @@ export function registerFeishuSheetTool(api: OpenClawPluginApi): boolean {
                 const dlRes: any = await client.invoke(
                   'feishu_sheet.export',
                   (sdk, opts) => sdk.drive.exportTask.download({ path: { file_token: fileToken! } }, opts),
-                  { as: 'user' },
+                  { as: 'tenant' },
                 );
 
                 const stream = dlRes.getReadableStream();
