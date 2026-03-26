@@ -11,6 +11,9 @@
 >
 > **Why this matters**
 > In our usage, OpenClaw is treated as a virtual employee with its own authority, not merely a wrapper around a human user token. Using bot/tenant identity makes ownership and edits attributable to the app itself, which is important for distinguishing human work from agent work, measuring collaboration and usage, and supporting a department-wide shared OpenClaw setup where multiple teammates build on the same agent workflows.
+>
+> **Install this custom branch**
+> Clone this repository into `~/.openclaw/extensions/openclaw-lark`, switch to the latest `custom/*` branch, run `npm run build`, and then set the plugin entry in your `openclaw.json` to `openclaw-lark`.
 
 This is the official Lark/Feishu plugin for OpenClaw, developed and maintained by the Lark/Feishu Open Platform team. It seamlessly connects your OpenClaw Agent to your Lark/Feishu workspace, enabling it to directly read from and write to messages, docs, bases, calendars, tasks, and more.
 
