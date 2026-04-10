@@ -152,6 +152,40 @@ function resolveFeishuSendContext(params: {
   };
 }
 
+interface PayloadMediaCompatFields {
+  mediaUrl?: unknown;
+  mediaUrls?: unknown;
+  MediaPath?: unknown;
+  MediaPaths?: unknown;
+  mediaPath?: unknown;
+  mediaPaths?: unknown;
+}
+
+function normalizeMediaInputs(value: unknown): string[] {
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    return trimmed ? [trimmed] : [];
+  }
+
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((entry) => normalizeMediaInputs(entry));
+}
+
+function resolvePayloadMediaSources(payload: { mediaUrl?: unknown; mediaUrls?: unknown }): string[] {
+  const compatPayload = payload as PayloadMediaCompatFields;
+  return [
+    ...normalizeMediaInputs(payload.mediaUrls),
+    ...normalizeMediaInputs(payload.mediaUrl),
+    ...normalizeMediaInputs(compatPayload.MediaPaths),
+    ...normalizeMediaInputs(compatPayload.MediaPath),
+    ...normalizeMediaInputs(compatPayload.mediaPaths),
+    ...normalizeMediaInputs(compatPayload.mediaPath),
+  ];
+}
+
 // ---------------------------------------------------------------------------
 // Adapter
 // ---------------------------------------------------------------------------
@@ -225,7 +259,7 @@ export const feishuOutbound: ChannelOutboundAdapter = {
 
     // --- Resolve text + media from payload ---
     const text = payload.text ?? '';
-    const mediaUrls = payload.mediaUrls?.length ? payload.mediaUrls : payload.mediaUrl ? [payload.mediaUrl] : [];
+    const mediaUrls = resolvePayloadMediaSources(payload);
 
     log.info(
       `sendPayload: target=${to}, ` +
