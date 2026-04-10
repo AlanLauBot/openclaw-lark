@@ -104,6 +104,10 @@ export type ToolActionKey =
   | 'feishu_chat.search'
   | 'feishu_chat_members.default'
   | 'feishu_create_doc.default'
+  | 'feishu_doc_permission.create'
+  | 'feishu_doc_permission.list'
+  | 'feishu_doc_permission.transfer_owner'
+  | 'feishu_doc_permission.update'
   | 'feishu_doc_comments.create'
   | 'feishu_doc_comments.list'
   | 'feishu_doc_comments.list_replies'
@@ -323,6 +327,10 @@ export const TOOL_SCOPES: ToolScopeMapping = {
     'wiki:node:read',
     'docs:document.media:upload',
   ],
+  'feishu_doc_permission.list': [],
+  'feishu_doc_permission.create': [],
+  'feishu_doc_permission.update': [],
+  'feishu_doc_permission.transfer_owner': [],
   'feishu_fetch_doc.default': ['docx:document:readonly', 'wiki:node:read'],
   'feishu_update_doc.default': [
     'board:whiteboard:node:create',

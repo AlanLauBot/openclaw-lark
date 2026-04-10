@@ -433,6 +433,7 @@ export class ToolClient {
       query?: Record<string, string>;
       headers?: Record<string, string>;
       accessToken?: string;
+      tokenType?: 'user' | 'tenant';
     },
   ): Promise<T> {
     return rawLarkRequest<T>({

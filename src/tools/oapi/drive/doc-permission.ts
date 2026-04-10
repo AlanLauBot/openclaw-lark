@@ -55,6 +55,29 @@ interface DocPermissionParams {
   need_notification?: boolean;
 }
 
+interface DocPermissionMember {
+  member_id?: string;
+  member_type?: string;
+  perm?: string;
+  [key: string]: unknown;
+}
+
+interface DocPermissionListResponse {
+  code?: number;
+  msg?: string;
+  data?: {
+    items?: DocPermissionMember[];
+    has_more?: boolean;
+    page_token?: string;
+  };
+}
+
+interface DocPermissionMutationResponse {
+  code?: number;
+  msg?: string;
+  data?: DocPermissionMember | null;
+}
+
 function validateParams(p: DocPermissionParams) {
   if ((p.action === 'create' || p.action === 'update') && (!p.member_type || !p.member_id || !p.perm)) {
     throw new Error('create/update 权限时必须提供 member_type、member_id、perm');
@@ -87,7 +110,7 @@ export function registerDocPermissionTool(api: OpenClawPluginApi): boolean {
 
           switch (p.action) {
             case 'list': {
-              const res = await client.invoke(
+              const res = await client.invoke<DocPermissionListResponse>(
                 'feishu_doc_permission.list',
                 (sdk: any, opts: any) =>
                   sdk.drive.v1.permissionMember.list(
@@ -112,7 +135,7 @@ export function registerDocPermissionTool(api: OpenClawPluginApi): boolean {
             }
 
             case 'create': {
-              const res = await client.invoke(
+              const res = await client.invoke<DocPermissionMutationResponse>(
                 'feishu_doc_permission.create',
                 (sdk: any, opts: any) =>
                   sdk.drive.v1.permissionMember.create(
@@ -134,7 +157,7 @@ export function registerDocPermissionTool(api: OpenClawPluginApi): boolean {
             }
 
             case 'update': {
-              const res = await client.invoke(
+              const res = await client.invoke<DocPermissionMutationResponse>(
                 'feishu_doc_permission.update',
                 (sdk: any, opts: any) =>
                   sdk.drive.v1.permissionMember.update(
@@ -155,7 +178,7 @@ export function registerDocPermissionTool(api: OpenClawPluginApi): boolean {
             }
 
             case 'transfer_owner': {
-              const res = await client.invoke(
+              const res = await client.invoke<DocPermissionMutationResponse>(
                 'feishu_doc_permission.transfer_owner',
                 (sdk: any, opts: any) =>
                   sdk.drive.v1.permissionMember.transferOwner(
