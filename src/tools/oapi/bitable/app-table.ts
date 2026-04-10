@@ -4,14 +4,16 @@
  *
  * feishu_bitable_app_table tool -- Manage Feishu Bitable tables.
  *
- * P0 Actions: create, list, patch
- * P1 Actions: batch_create
+ * P0 Actions: create, list, patch, delete
+ * P1 Actions: batch_create, batch_delete
  *
  * Uses the Feishu Bitable v1 API:
  *   - create: POST /open-apis/bitable/v1/apps/:app_token/tables
  *   - list:   GET  /open-apis/bitable/v1/apps/:app_token/tables
  *   - patch:  PATCH /open-apis/bitable/v1/apps/:app_token/tables/:table_id
+ *   - delete: DELETE /open-apis/bitable/v1/apps/:app_token/tables/:table_id
  *   - batch_create: POST /open-apis/bitable/v1/apps/:app_token/tables/batch_create
+ *   - batch_delete: POST /open-apis/bitable/v1/apps/:app_token/tables/batch_delete
  */
 
 import type { OpenClawPluginApi } from 'openclaw/plugin-sdk';
@@ -64,6 +66,13 @@ const FeishuBitableAppTableSchema = Type.Union([
     name: Type.Optional(Type.String({ description: '新的表名' })),
   }),
 
+  // DELETE (P0)
+  Type.Object({
+    action: Type.Literal('delete'),
+    app_token: Type.String({ description: '多维表格 token' }),
+    table_id: Type.String({ description: '数据表 ID' }),
+  }),
+
   // BATCH_CREATE (P1)
   Type.Object({
     action: Type.Literal('batch_create'),
@@ -76,6 +85,12 @@ const FeishuBitableAppTableSchema = Type.Union([
     ),
   }),
 
+  // BATCH_DELETE (P1)
+  Type.Object({
+    action: Type.Literal('batch_delete'),
+    app_token: Type.String({ description: '多维表格 token' }),
+    table_ids: Type.Array(Type.String(), { description: '要删除的数据表 ID 列表' }),
+  }),
 ]);
 
 // ---------------------------------------------------------------------------
@@ -110,9 +125,19 @@ type FeishuBitableAppTableParams =
       name?: string;
     }
   | {
+      action: 'delete';
+      app_token: string;
+      table_id: string;
+    }
+  | {
       action: 'batch_create';
       app_token: string;
       tables: Array<{ name: string }>;
+    }
+  | {
+      action: 'batch_delete';
+      app_token: string;
+      table_ids: string[];
     };
 
 // ---------------------------------------------------------------------------
@@ -133,7 +158,7 @@ export function registerFeishuBitableAppTableTool(api: OpenClawPluginApi): void 
       label: 'Feishu Bitable Tables',
       description:
         '【以用户身份】飞书多维表格数据表管理工具。当用户要求创建/查询/管理数据表时使用。' +
-        '\n\nActions: create（创建数据表，可选择在创建时传入 fields 数组定义字段，或后续逐个添加）, list（列出所有数据表）, patch（更新数据表）, batch_create（批量创建）。' +
+        '\n\nActions: create（创建数据表，可选择在创建时传入 fields 数组定义字段，或后续逐个添加）, list（列出所有数据表）, patch（更新数据表）, delete（删除数据表）, batch_create（批量创建）, batch_delete（批量删除）。' +
         '\n\n【字段定义方式】支持两种模式：1) 明确需求时，在 create 中通过 table.fields 一次性定义所有字段（减少 API 调用）；2) 探索式场景时，使用默认表 + feishu_bitable_app_table_field 逐步修改字段（更稳定，易调整）。',
       parameters: FeishuBitableAppTableSchema,
       async execute(_toolCallId, params) {
@@ -184,7 +209,7 @@ export function registerFeishuBitableAppTableTool(api: OpenClawPluginApi): void 
                     },
                     opts,
                   ),
-                { as: 'user' },
+                { as: 'tenant' },
               );
               assertLarkOk(res);
 
@@ -218,7 +243,7 @@ export function registerFeishuBitableAppTableTool(api: OpenClawPluginApi): void 
                     },
                     opts,
                   ),
-                { as: 'user' },
+                { as: 'tenant' },
               );
               assertLarkOk(res);
 
@@ -254,7 +279,7 @@ export function registerFeishuBitableAppTableTool(api: OpenClawPluginApi): void 
                     },
                     opts,
                   ),
-                { as: 'user' },
+                { as: 'tenant' },
               );
               assertLarkOk(res);
 
@@ -262,6 +287,35 @@ export function registerFeishuBitableAppTableTool(api: OpenClawPluginApi): void 
 
               return json({
                 name: res.data?.name,
+              });
+            }
+
+            // -----------------------------------------------------------------
+            // DELETE
+            // -----------------------------------------------------------------
+            case 'delete': {
+              log.info(`delete: app_token=${p.app_token}, table_id=${p.table_id}`);
+
+              const res = await client.invoke(
+                'feishu_bitable_app_table.delete',
+                (sdk, opts) =>
+                  sdk.bitable.appTable.delete(
+                    {
+                      path: {
+                        app_token: p.app_token,
+                        table_id: p.table_id,
+                      },
+                    },
+                    opts,
+                  ),
+                { as: 'tenant' },
+              );
+              assertLarkOk(res);
+
+              log.info(`delete: deleted table ${p.table_id}`);
+
+              return json({
+                success: true,
               });
             }
 
@@ -291,7 +345,7 @@ export function registerFeishuBitableAppTableTool(api: OpenClawPluginApi): void 
                     },
                     opts,
                   ),
-                { as: 'user' },
+                { as: 'tenant' },
               );
               assertLarkOk(res);
 
@@ -302,6 +356,42 @@ export function registerFeishuBitableAppTableTool(api: OpenClawPluginApi): void 
               });
             }
 
+            // -----------------------------------------------------------------
+            // BATCH_DELETE (P1)
+            // -----------------------------------------------------------------
+            case 'batch_delete': {
+              if (!p.table_ids || p.table_ids.length === 0) {
+                return json({
+                  error: 'table_ids is required and cannot be empty',
+                });
+              }
+
+              log.info(`batch_delete: app_token=${p.app_token}, table_ids_count=${p.table_ids.length}`);
+
+              const res = await client.invoke(
+                'feishu_bitable_app_table.batch_delete',
+                (sdk, opts) =>
+                  sdk.bitable.appTable.batchDelete(
+                    {
+                      path: {
+                        app_token: p.app_token,
+                      },
+                      data: {
+                        table_ids: p.table_ids,
+                      },
+                    },
+                    opts,
+                  ),
+                { as: 'tenant' },
+              );
+              assertLarkOk(res);
+
+              log.info(`batch_delete: deleted ${p.table_ids.length} tables from app ${p.app_token}`);
+
+              return json({
+                success: true,
+              });
+            }
           }
         } catch (err) {
           return await handleInvokeErrorWithAutoAuth(err, cfg);

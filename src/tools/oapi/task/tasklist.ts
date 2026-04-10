@@ -5,7 +5,7 @@
  * feishu_task_tasklist tool -- Manage Feishu task lists.
  *
  * P0 Actions: create, get, list, tasks
- * P1 Actions: patch, add_members
+ * P1 Actions: patch, delete, add_members, remove_members
  *
  * Uses the Feishu Task v2 API:
  *   - create: POST /open-apis/task/v2/tasklists
@@ -13,7 +13,9 @@
  *   - list:   GET  /open-apis/task/v2/tasklists
  *   - tasks:  GET  /open-apis/task/v2/tasklists/:tasklist_guid/tasks
  *   - patch:  PATCH /open-apis/task/v2/tasklists/:tasklist_guid
+ *   - delete: DELETE /open-apis/task/v2/tasklists/:tasklist_guid
  *   - add_members: POST /open-apis/task/v2/tasklists/:tasklist_guid/add_members
+ *   - remove_members: POST /open-apis/task/v2/tasklists/:tasklist_guid/remove_members
  */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -77,6 +79,12 @@ const FeishuTaskTasklistSchema = Type.Union([
     name: Type.Optional(Type.String({ description: '新的清单名称' })),
   }),
 
+  // DELETE (P1)
+  Type.Object({
+    action: Type.Literal('delete'),
+    tasklist_guid: Type.String({ description: '清单 GUID' }),
+  }),
+
   // ADD_MEMBERS (P1)
   Type.Object({
     action: Type.Literal('add_members'),
@@ -90,6 +98,20 @@ const FeishuTaskTasklistSchema = Type.Union([
     ),
   }),
 
+  // REMOVE_MEMBERS (P1)
+  Type.Object({
+    action: Type.Literal('remove_members'),
+    tasklist_guid: Type.String({ description: '清单 GUID' }),
+    members: Type.Array(
+      Type.Object({
+        id: Type.String({ description: '成员 open_id' }),
+        type: Type.Optional(StringEnum(['user', 'chat', 'app'])),
+      }),
+      {
+        description: '要移除的成员列表。注意：移除成员时不需要传 role 字段',
+      },
+    ),
+  }),
 ]);
 
 // ---------------------------------------------------------------------------
@@ -124,9 +146,18 @@ type FeishuTaskTasklistParams =
       name?: string;
     }
   | {
+      action: 'delete';
+      tasklist_guid: string;
+    }
+  | {
       action: 'add_members';
       tasklist_guid: string;
       members: Array<{ id: string; role?: string }>;
+    }
+  | {
+      action: 'remove_members';
+      tasklist_guid: string;
+      members: Array<{ id: string; type?: string }>;
     };
 
 // ---------------------------------------------------------------------------
@@ -145,7 +176,7 @@ export function registerFeishuTaskTasklistTool(api: OpenClawPluginApi): void {
       name: 'feishu_task_tasklist',
       label: 'Feishu Task Lists',
       description:
-        '【以用户身份】飞书任务清单管理工具。当用户要求创建/查询/管理清单、查看清单内的任务时使用。Actions: create（创建清单）, get（获取清单详情）, list（列出所有可读取的清单，包括我创建的和他人共享给我的）, tasks（列出清单内的任务）, patch（更新清单）, add_members（添加成员）。',
+        '【以用户身份】飞书任务清单管理工具。当用户要求创建/查询/管理清单、查看清单内的任务时使用。Actions: create（创建清单）, get（获取清单详情）, list（列出所有可读取的清单，包括我创建的和他人共享给我的）, tasks（列出清单内的任务）, patch（更新清单）, delete（删除清单）, add_members（添加成员）, remove_members（移除成员）。',
       parameters: FeishuTaskTasklistSchema,
       async execute(_toolCallId, params) {
         const p = params as FeishuTaskTasklistParams;
@@ -183,7 +214,7 @@ export function registerFeishuTaskTasklistTool(api: OpenClawPluginApi): void {
                     },
                     opts,
                   ),
-                { as: 'user' },
+                { as: 'tenant' },
               );
               assertLarkOk(res);
 
@@ -214,7 +245,7 @@ export function registerFeishuTaskTasklistTool(api: OpenClawPluginApi): void {
                     },
                     opts,
                   ),
-                { as: 'user' },
+                { as: 'tenant' },
               );
               assertLarkOk(res);
 
@@ -244,7 +275,7 @@ export function registerFeishuTaskTasklistTool(api: OpenClawPluginApi): void {
                     },
                     opts,
                   ),
-                { as: 'user' },
+                { as: 'tenant' },
               );
               assertLarkOk(res);
 
@@ -281,7 +312,7 @@ export function registerFeishuTaskTasklistTool(api: OpenClawPluginApi): void {
                     },
                     opts,
                   ),
-                { as: 'user' },
+                { as: 'tenant' },
               );
               assertLarkOk(res);
 
@@ -334,7 +365,7 @@ export function registerFeishuTaskTasklistTool(api: OpenClawPluginApi): void {
                     },
                     opts,
                   ),
-                { as: 'user' },
+                { as: 'tenant' },
               );
               assertLarkOk(res);
 
@@ -342,6 +373,34 @@ export function registerFeishuTaskTasklistTool(api: OpenClawPluginApi): void {
 
               return json({
                 tasklist: res.data?.tasklist,
+              });
+            }
+
+            // -----------------------------------------------------------------
+            // DELETE
+            // -----------------------------------------------------------------
+            case 'delete': {
+              log.info(`delete: tasklist_guid=${p.tasklist_guid}`);
+
+              const res = await client.invoke(
+                'feishu_task_tasklist.delete',
+                (sdk, opts) =>
+                  sdk.task.v2.tasklist.delete(
+                    {
+                      path: {
+                        tasklist_guid: p.tasklist_guid,
+                      },
+                    },
+                    opts,
+                  ),
+                { as: 'tenant' },
+              );
+              assertLarkOk(res);
+
+              log.info(`delete: deleted tasklist ${p.tasklist_guid}`);
+
+              return json({
+                success: true,
               });
             }
 
@@ -380,7 +439,7 @@ export function registerFeishuTaskTasklistTool(api: OpenClawPluginApi): void {
                     },
                     opts,
                   ),
-                { as: 'user' },
+                { as: 'tenant' },
               );
               assertLarkOk(res);
 
@@ -391,6 +450,50 @@ export function registerFeishuTaskTasklistTool(api: OpenClawPluginApi): void {
               });
             }
 
+            // -----------------------------------------------------------------
+            // REMOVE_MEMBERS
+            // -----------------------------------------------------------------
+            case 'remove_members': {
+              if (!p.members || p.members.length === 0) {
+                return json({
+                  error: 'members is required and cannot be empty',
+                });
+              }
+
+              log.info(`remove_members: tasklist_guid=${p.tasklist_guid}, members_count=${p.members.length}`);
+
+              const memberData = p.members.map((m) => ({
+                id: m.id,
+                type: m.type || 'user',
+              }));
+
+              const res = await client.invoke(
+                'feishu_task_tasklist.remove_members',
+                (sdk, opts) =>
+                  sdk.task.v2.tasklist.removeMembers(
+                    {
+                      path: {
+                        tasklist_guid: p.tasklist_guid,
+                      },
+                      params: {
+                        user_id_type: 'open_id' as any,
+                      },
+                      data: {
+                        members: memberData,
+                      },
+                    },
+                    opts,
+                  ),
+                { as: 'tenant' },
+              );
+              assertLarkOk(res);
+
+              log.info(`remove_members: removed ${p.members.length} members from tasklist ${p.tasklist_guid}`);
+
+              return json({
+                tasklist: res.data?.tasklist,
+              });
+            }
           }
         } catch (err) {
           return await handleInvokeErrorWithAutoAuth(err, cfg);
