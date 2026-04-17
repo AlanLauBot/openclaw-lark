@@ -139,7 +139,7 @@ export function registerFeishuTaskCommentTool(api: OpenClawPluginApi): void {
                     },
                     opts,
                   ),
-                { as: p.auth_type || 'user' },
+                { as: p.auth_type || 'tenant' },
               );
               assertLarkOk(res);
 
@@ -175,7 +175,7 @@ export function registerFeishuTaskCommentTool(api: OpenClawPluginApi): void {
                     },
                     opts,
                   ),
-                { as: p.auth_type || 'user' },
+                { as: p.auth_type || 'tenant' },
               );
               assertLarkOk(res);
 
@@ -210,7 +210,7 @@ export function registerFeishuTaskCommentTool(api: OpenClawPluginApi): void {
                     },
                     opts,
                   ),
-                { as: p.auth_type || 'user' },
+                { as: p.auth_type || 'tenant' },
               );
               assertLarkOk(res);
 

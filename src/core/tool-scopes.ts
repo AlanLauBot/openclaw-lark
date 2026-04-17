@@ -100,6 +100,10 @@ export type ToolActionKey =
   | 'feishu_chat.search'
   | 'feishu_chat_members.default'
   | 'feishu_create_doc.default'
+  | 'feishu_doc_permission.create'
+  | 'feishu_doc_permission.list'
+  | 'feishu_doc_permission.transfer_owner'
+  | 'feishu_doc_permission.update'
   | 'feishu_doc_comments.create'
   | 'feishu_doc_comments.list'
   | 'feishu_doc_comments.list_replies'
@@ -271,6 +275,10 @@ export const TOOL_SCOPES: ToolScopeMapping = {
   'feishu_drive_file.download': ['drive:file:download'],
   'feishu_doc_media.download': ['board:whiteboard:node:read', 'docs:document.media:download'],
   'feishu_doc_media.insert': ['docx:document:write_only', 'docs:document.media:upload'],
+  'feishu_doc_permission.list': [],
+  'feishu_doc_permission.create': [],
+  'feishu_doc_permission.update': [],
+  'feishu_doc_permission.transfer_owner': [],
   'feishu_doc_comments.list': ['wiki:node:read', 'docs:document.comment:read'],
   'feishu_doc_comments.list_replies': ['wiki:node:read', 'docs:document.comment:read'],
   'feishu_doc_comments.create': ['wiki:node:read', 'docs:document.comment:create'],

@@ -38,6 +38,7 @@ export interface RawLarkRequestOptions {
   query?: Record<string, string>;
   headers?: Record<string, string>;
   accessToken?: string;
+  tokenType?: 'user' | 'tenant';
 }
 
 function isFormDataBody(body: unknown): boolean {
@@ -83,6 +84,9 @@ export async function rawLarkRequest<T>(options: RawLarkRequestOptions): Promise
   let requestBody: BodyInit | string | undefined;
   if (options.accessToken) {
     headers['Authorization'] = `Bearer ${options.accessToken}`;
+    if (options.tokenType === 'tenant') {
+      headers['X-Lark-Tenant-Token'] = options.accessToken;
+    }
   }
   if (options.body !== undefined) {
     const prepared = buildRequestBody(options.body);

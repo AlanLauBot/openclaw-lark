@@ -11,6 +11,8 @@
 
 import type { ClawdbotConfig, RuntimeEnv } from 'openclaw/plugin-sdk';
 import type { HistoryEntry } from 'openclaw/plugin-sdk/reply-history';
+import * as http from 'node:http';
+import * as Lark from '@larksuiteoapi/node-sdk';
 import { getEnabledLarkAccounts, getLarkAccount } from '../core/accounts';
 import { LarkClient } from '../core/lark-client';
 import { MessageDedup } from '../messaging/inbound/dedup';
@@ -27,6 +29,7 @@ import {
 } from './event-handlers';
 
 const mlog = larkLogger('channel/monitor');
+const webhookServers = new Map<string, http.Server>();
 
 // Re-export type for backward compatibility
 export type { MonitorFeishuOpts } from './types';
@@ -53,14 +56,9 @@ async function monitorSingleAccount(params: {
   const log = runtime?.log ?? ((...args: unknown[]) => mlog.info(args.map(String).join(' ')));
   const error = runtime?.error ?? ((...args: unknown[]) => mlog.error(args.map(String).join(' ')));
 
-  // Only websocket mode is supported in the monitor path.
   const connectionMode = account.config.connectionMode ?? 'websocket';
-  if (connectionMode !== 'websocket') {
-    log(`feishu[${accountId}]: webhook mode not implemented in monitor`);
-    return;
-  }
 
-  // Message dedup — filters duplicate deliveries from WebSocket reconnects.
+  // Message dedup — filters duplicate deliveries from reconnects / retries.
   const dedupCfg = account.config.dedup;
   const messageDedup = new MessageDedup({
     ttlMs: dedupCfg?.ttlMs,
@@ -69,8 +67,6 @@ async function monitorSingleAccount(params: {
   log(
     `feishu[${accountId}]: message dedup enabled (ttl=${messageDedup['ttlMs']}ms, max=${messageDedup['maxEntries']})`,
   );
-
-  log(`feishu[${accountId}]: starting WebSocket connection...`);
 
   // Create LarkClient instance — manages SDK client, WS, and bot identity.
   const lark = LarkClient.fromAccount(account);
@@ -94,26 +90,84 @@ async function monitorSingleAccount(params: {
     error,
   };
 
+  const handlers = {
+    'im.message.receive_v1': (data: unknown) => handleMessageEvent(ctx, data),
+    'im.message.message_read_v1': async () => {},
+    'im.message.reaction.created_v1': (data: unknown) => handleReactionEvent(ctx, data),
+    'im.message.reaction.deleted_v1': async () => {},
+    'im.chat.access_event.bot_p2p_chat_entered_v1': async () => {},
+    'im.chat.member.bot.added_v1': (data: unknown) => handleBotMembershipEvent(ctx, data, 'added'),
+    'im.chat.member.bot.deleted_v1': (data: unknown) => handleBotMembershipEvent(ctx, data, 'removed'),
+    'vc.bot.meeting_invited_v1': (data: unknown) => handleVcMeetingInvitedEvent(ctx, data),
+    'drive.notice.comment_add_v1': (data: unknown) => handleCommentEvent(ctx, data),
+    'card.action.trigger': ((data: unknown) =>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      handleCardActionEvent(ctx, data)) as any,
+  };
+
+  if (connectionMode === 'webhook') {
+    const probe = await lark.probe();
+    log(`feishu[${accountId}]: bot open_id resolved: ${probe.ok ? (probe.botOpenId ?? 'unknown') : 'unknown'}`);
+
+    const dispatcher = new Lark.EventDispatcher({
+      encryptKey: account.config.encryptKey ?? '',
+      verificationToken: account.config.verificationToken ?? '',
+    });
+    dispatcher.register(handlers);
+
+    const port = account.config.webhookPort ?? 3000;
+    const path = account.config.webhookPath ?? '/feishu/events';
+    log(`feishu[${accountId}]: starting Webhook server on port ${port}, path ${path}...`);
+
+    const server = http.createServer();
+    const webhookHandler = Lark.adaptDefault(path, dispatcher, { autoChallenge: true });
+
+    server.on('request', (req, res) => {
+      void Promise.resolve(webhookHandler(req, res)).catch((err) => {
+        error(`feishu[${accountId}]: webhook handler error: ${String(err)}`);
+      });
+    });
+
+    webhookServers.set(accountId, server);
+
+    await new Promise<void>((resolve, reject) => {
+      const cleanup = () => {
+        webhookServers.delete(accountId);
+        server.close();
+      };
+
+      const onAbort = () => {
+        log(`feishu[${accountId}]: abort signal received, stopping Webhook server`);
+        cleanup();
+        resolve();
+      };
+
+      if (abortSignal?.aborted) {
+        cleanup();
+        resolve();
+        return;
+      }
+
+      abortSignal?.addEventListener('abort', onAbort, { once: true });
+
+      server.listen(port, () => {
+        log(`feishu[${accountId}]: Webhook server listening on port ${port}`);
+        mlog.info(`webhook started for account ${accountId} at ${path}`);
+      });
+
+      server.on('error', (err) => {
+        abortSignal?.removeEventListener('abort', onAbort);
+        webhookServers.delete(accountId);
+        reject(err);
+      });
+    });
+    return;
+  }
+
+  log(`feishu[${accountId}]: starting WebSocket connection...`);
+
   await lark.startWS({
-    handlers: {
-      'im.message.receive_v1': (data) => handleMessageEvent(ctx, data),
-      'im.message.message_read_v1': async () => {},
-      'im.message.reaction.created_v1': (data) => handleReactionEvent(ctx, data),
-      // These events are expected in normal usage but do not affect the
-      // plugin's current behavior. Register no-op handlers to avoid SDK
-      // warnings about missing handlers.
-      'im.message.reaction.deleted_v1': async () => {},
-      'im.chat.access_event.bot_p2p_chat_entered_v1': async () => {},
-      'im.chat.member.bot.added_v1': (data) => handleBotMembershipEvent(ctx, data, 'added'),
-      'im.chat.member.bot.deleted_v1': (data) => handleBotMembershipEvent(ctx, data, 'removed'),
-      'vc.bot.meeting_invited_v1': (data) => handleVcMeetingInvitedEvent(ctx, data),
-      // Drive comment event — fires when a user adds a comment or reply on a document.
-      'drive.notice.comment_add_v1': (data) => handleCommentEvent(ctx, data),
-      // 飞书 SDK EventDispatcher.register 不支持带返回值的处理器，此处 as any 是 SDK 类型限制的变通
-      'card.action.trigger': ((data: unknown) =>
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        handleCardActionEvent(ctx, data)) as any,
-    },
+    handlers,
     abortSignal,
   });
 

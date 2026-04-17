@@ -56,7 +56,7 @@ function createUATFetchSubMessages(client: ToolClient) {
     }>('feishu_im_user_get_messages.default', `/open-apis/im/v1/messages/${messageId}`, {
       method: 'GET',
       query: { user_id_type: 'open_id', card_msg_content_type: 'raw_card_content' },
-      as: 'user',
+      as: 'tenant',
     });
     if (res.code !== 0) {
       throw new Error(`API error: code=${res.code} msg=${res.msg}`);
