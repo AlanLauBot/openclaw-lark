@@ -259,7 +259,7 @@ export function registerFeishuSearchDocWikiTool(api: OpenClawPluginApi): boolean
                     _opts,
                   );
                 },
-                { as: 'user' },
+                { as: 'tenant' },
               );
 
               // 检查响应
