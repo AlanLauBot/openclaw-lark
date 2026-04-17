@@ -509,7 +509,7 @@ export function registerFeishuCalendarEventTool(api: OpenClawPluginApi): void {
     const primaryRes = await client.invoke(
       'feishu_calendar_calendar.primary',
       (sdk, opts) => sdk.calendar.calendar.primary({}, opts),
-      { as: 'user' },
+      { as: 'tenant' },
     );
     const data = primaryRes.data as CalendarPrimaryData | undefined;
     const cid = data?.calendars?.[0]?.calendar?.calendar_id;
@@ -620,7 +620,7 @@ export function registerFeishuCalendarEventTool(api: OpenClawPluginApi): void {
                     },
                     opts,
                   ),
-                { as: 'user' },
+                { as: 'tenant' },
               );
               assertLarkOk(res);
               log.info(`event created: event_id=${res.data?.event?.event_id}`);
@@ -667,7 +667,7 @@ export function registerFeishuCalendarEventTool(api: OpenClawPluginApi): void {
                         },
                         opts,
                       ),
-                    { as: 'user' },
+                    { as: 'tenant' },
                   );
                   assertLarkOk(attendeeRes);
                   log.info(`attendee API response: ${JSON.stringify(attendeeRes.data)}`);
@@ -754,7 +754,7 @@ export function registerFeishuCalendarEventTool(api: OpenClawPluginApi): void {
                     },
                     opts,
                   ),
-                { as: 'user' },
+                { as: 'tenant' },
               );
               assertLarkOk(res);
 
@@ -787,7 +787,7 @@ export function registerFeishuCalendarEventTool(api: OpenClawPluginApi): void {
                     },
                     opts,
                   ),
-                { as: 'user' },
+                { as: 'tenant' },
               );
               assertLarkOk(res);
 
@@ -849,7 +849,7 @@ export function registerFeishuCalendarEventTool(api: OpenClawPluginApi): void {
                     },
                     opts,
                   ),
-                { as: 'user' },
+                { as: 'tenant' },
               );
               assertLarkOk(res);
 
@@ -884,7 +884,7 @@ export function registerFeishuCalendarEventTool(api: OpenClawPluginApi): void {
                     },
                     opts,
                   ),
-                { as: 'user' },
+                { as: 'tenant' },
               );
               assertLarkOk(res);
 
@@ -922,7 +922,7 @@ export function registerFeishuCalendarEventTool(api: OpenClawPluginApi): void {
                     },
                     opts,
                   ),
-                { as: 'user' },
+                { as: 'tenant' },
               );
               assertLarkOk(res);
 
@@ -959,7 +959,7 @@ export function registerFeishuCalendarEventTool(api: OpenClawPluginApi): void {
                     },
                     opts,
                   ),
-                { as: 'user' },
+                { as: 'tenant' },
               );
               assertLarkOk(res);
 
@@ -1010,7 +1010,7 @@ export function registerFeishuCalendarEventTool(api: OpenClawPluginApi): void {
                     },
                     opts,
                   ),
-                { as: 'user' },
+                { as: 'tenant' },
               );
               assertLarkOk(res);
 
@@ -1060,7 +1060,7 @@ export function registerFeishuCalendarEventTool(api: OpenClawPluginApi): void {
                     },
                     opts,
                   ),
-                { as: 'user' },
+                { as: 'tenant' },
               );
               assertLarkOk(res);
 

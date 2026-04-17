@@ -36,6 +36,7 @@ export interface RawLarkRequestOptions {
   query?: Record<string, string>;
   headers?: Record<string, string>;
   accessToken?: string;
+  tokenType?: 'user' | 'tenant';
 }
 
 /**
@@ -55,6 +56,9 @@ export async function rawLarkRequest<T>(options: RawLarkRequestOptions): Promise
   const headers: Record<string, string> = {};
   if (options.accessToken) {
     headers['Authorization'] = `Bearer ${options.accessToken}`;
+    if (options.tokenType === 'tenant') {
+      headers['X-Lark-Tenant-Token'] = options.accessToken;
+    }
   }
   if (options.body !== undefined) {
     headers['Content-Type'] = 'application/json';

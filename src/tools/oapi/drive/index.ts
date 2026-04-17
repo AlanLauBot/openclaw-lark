@@ -12,6 +12,7 @@ import { resolveAnyEnabledToolsConfig } from '../../../core/tools-config';
 import { registerFeishuDriveFileTool } from './file';
 import { registerDocCommentsTool } from './doc-comments';
 import { registerDocMediaTool } from './doc-media';
+import { registerDocPermissionTool } from './doc-permission';
 
 /**
  * 注册所有 Drive 工具
@@ -39,6 +40,7 @@ export function registerFeishuDriveTools(api: OpenClawPluginApi): void {
   if (registerFeishuDriveFileTool(api)) registered.push('feishu_drive_file');
   if (registerDocCommentsTool(api)) registered.push('feishu_doc_comments');
   if (registerDocMediaTool(api)) registered.push('feishu_doc_media');
+  if (registerDocPermissionTool(api)) registered.push('feishu_doc_permission');
   if (registered.length > 0) {
     api.logger.debug?.(`feishu_drive: Registered ${registered.join(', ')}`);
   }
