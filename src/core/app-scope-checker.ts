@@ -197,6 +197,19 @@ export async function getAppInfo(sdk: Lark.Client, appId: string): Promise<AppIn
   };
 }
 
+const SCOPE_ALIASES: Record<string, string[]> = {
+  'base:app:create': ['bitable:app'],
+  'base:app:read': ['bitable:app'],
+  'base:app:update': ['bitable:app'],
+  'base:app:copy': ['bitable:app'],
+};
+
+function hasScopeWithAlias(grantedSet: Set<string>, requiredScope: string): boolean {
+  if (grantedSet.has(requiredScope)) return true;
+  const aliases = SCOPE_ALIASES[requiredScope] ?? [];
+  return aliases.some((alias) => grantedSet.has(alias));
+}
+
 // ---------------------------------------------------------------------------
 // Scope intersection
 // ---------------------------------------------------------------------------
@@ -212,7 +225,7 @@ export async function getAppInfo(sdk: Lark.Client, appId: string): Promise<AppIn
  */
 export function intersectScopes(appGranted: string[], apiRequired: string[]): string[] {
   const grantedSet = new Set(appGranted);
-  return apiRequired.filter((s) => grantedSet.has(s));
+  return apiRequired.filter((s) => hasScopeWithAlias(grantedSet, s));
 }
 
 /**
@@ -226,7 +239,7 @@ export function intersectScopes(appGranted: string[], apiRequired: string[]): st
  */
 export function missingScopes(appGranted: string[], apiRequired: string[]): string[] {
   const grantedSet = new Set(appGranted);
-  return apiRequired.filter((s) => !grantedSet.has(s));
+  return apiRequired.filter((s) => !hasScopeWithAlias(grantedSet, s));
 }
 
 /**

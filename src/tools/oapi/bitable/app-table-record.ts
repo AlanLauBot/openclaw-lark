@@ -321,7 +321,7 @@ export function registerFeishuBitableAppTableRecordTool(api: OpenClawPluginApi):
                     },
                     opts,
                   ),
-                { as: 'user' },
+                { as: 'tenant' },
               );
               assertLarkOk(res);
 
@@ -374,7 +374,7 @@ export function registerFeishuBitableAppTableRecordTool(api: OpenClawPluginApi):
                     },
                     opts,
                   ),
-                { as: 'user' },
+                { as: 'tenant' },
               );
               assertLarkOk(res);
 
@@ -404,7 +404,7 @@ export function registerFeishuBitableAppTableRecordTool(api: OpenClawPluginApi):
                     },
                     opts,
                   ),
-                { as: 'user' },
+                { as: 'tenant' },
               );
               assertLarkOk(res);
 
@@ -471,7 +471,7 @@ export function registerFeishuBitableAppTableRecordTool(api: OpenClawPluginApi):
                     },
                     opts,
                   ),
-                { as: 'user' },
+                { as: 'tenant' },
               );
               assertLarkOk(res);
 
@@ -538,7 +538,7 @@ export function registerFeishuBitableAppTableRecordTool(api: OpenClawPluginApi):
                     },
                     opts,
                   ),
-                { as: 'user' },
+                { as: 'tenant' },
               );
               assertLarkOk(res);
 
@@ -584,7 +584,7 @@ export function registerFeishuBitableAppTableRecordTool(api: OpenClawPluginApi):
                     },
                     opts,
                   ),
-                { as: 'user' },
+                { as: 'tenant' },
               );
               assertLarkOk(res);
 
@@ -645,7 +645,7 @@ export function registerFeishuBitableAppTableRecordTool(api: OpenClawPluginApi):
                     },
                     opts,
                   ),
-                { as: 'user' },
+                { as: 'tenant' },
               );
               assertLarkOk(res);
 

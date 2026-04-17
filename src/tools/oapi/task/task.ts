@@ -495,7 +495,7 @@ export function registerFeishuTaskTaskTool(api: OpenClawPluginApi): void {
               if (p.repeat_rule) taskData.repeat_rule = p.repeat_rule;
               if (p.tasklists) taskData.tasklists = p.tasklists;
 
-              const authType = p.auth_type || 'user';
+              const authType = p.auth_type || 'tenant';
               const res = await client.invoke(
                 'feishu_task_task.create',
                 (sdk, opts) =>
@@ -526,7 +526,7 @@ export function registerFeishuTaskTaskTool(api: OpenClawPluginApi): void {
             case 'get': {
               log.info(`get: task_guid=${p.task_guid}`);
 
-              const authType = p.auth_type || 'user';
+              const authType = p.auth_type || 'tenant';
               const res = await client.invoke(
                 'feishu_task_task.get',
                 (sdk, opts) =>
@@ -556,19 +556,21 @@ export function registerFeishuTaskTaskTool(api: OpenClawPluginApi): void {
             case 'list': {
               log.info(`list: page_size=${p.page_size ?? 50}, completed=${p.completed ?? false}`);
 
-              const authType = p.auth_type || 'user';
+              const authType = p.auth_type || 'tenant';
+              const paramsData: any = {
+                page_size: p.page_size,
+                page_token: p.page_token,
+                completed: p.completed,
+                agent_task_status: p.agent_task_status,
+                user_id_type: (p.user_id_type || 'open_id') as any,
+              };
+
               const res = await client.invoke(
                 'feishu_task_task.list',
                 (sdk, opts) =>
                   sdk.task.v2.task.list(
                     {
-                      params: {
-                        page_size: p.page_size,
-                        page_token: p.page_token,
-                        completed: p.completed,
-                        agent_task_status: p.agent_task_status,
-                        user_id_type: p.user_id_type || 'open_id',
-                      } as any,
+                      params: paramsData,
                     },
                     opts,
                   ),
@@ -675,7 +677,7 @@ export function registerFeishuTaskTaskTool(api: OpenClawPluginApi): void {
                 });
               }
 
-              const authType = p.auth_type || 'user';
+              const authType = p.auth_type || 'tenant';
               const res = await client.invoke(
                 'feishu_task_task.patch',
                 (sdk, opts) =>
@@ -726,7 +728,7 @@ export function registerFeishuTaskTaskTool(api: OpenClawPluginApi): void {
                 requestData.client_token = p.client_token;
               }
 
-              const authType = p.auth_type || 'user';
+              const authType = p.auth_type || 'tenant';
               const res = await client.invoke(
                 'feishu_task_task.add_members',
                 (sdk, opts) =>
