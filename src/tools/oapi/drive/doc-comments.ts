@@ -253,7 +253,7 @@ export function registerDocCommentsTool(api: OpenClawPluginApi): boolean {
                     },
                     opts,
                   ),
-                { as: 'user' },
+                { as: 'tenant' },
               );
               assertLarkOk(wikiNodeRes as any);
 
@@ -500,7 +500,7 @@ export function registerDocCommentsTool(api: OpenClawPluginApi): boolean {
                   },
                   opts,
                 ),
-              { as: 'user' },
+              { as: 'tenant' },
             );
             assertLarkOk(res as any);
 
