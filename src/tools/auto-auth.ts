@@ -459,12 +459,14 @@ function buildAppScopeMissingCard(params: {
   missingScopes: string[];
   appId?: string;
   operationId: string;
+  tokenType?: 'user' | 'tenant';
   brand?: LarkBrand;
 }): Record<string, unknown> {
-  const { missingScopes, appId, operationId, brand } = params;
+  const { missingScopes, appId, operationId, tokenType, brand } = params;
+  const permissionTokenType = tokenType ?? 'tenant';
   const openDomain = brand === 'lark' ? 'https://open.larksuite.com' : 'https://open.feishu.cn';
   const authUrl = appId
-    ? `${openDomain}/app/${appId}/auth?q=${encodeURIComponent(missingScopes.join(','))}&op_from=feishu-openclaw&token_type=user`
+    ? `${openDomain}/app/${appId}/auth?q=${encodeURIComponent(missingScopes.join(','))}&op_from=feishu-openclaw&token_type=${permissionTokenType}`
     : `${openDomain}/`;
   const multiUrl = { url: authUrl, pc_url: '', android_url: '', ios_url: '' };
 
@@ -622,7 +624,13 @@ async function sendAppScopeCard(params: {
     const { operationId: activeOpId, flow: activeFlow } = activeEntry;
     // 更新已有卡片的内容（合并后的 scope）
     const newOperationId = Date.now().toString(36) + Math.random().toString(36).slice(2);
-    const card = buildAppScopeMissingCard({ missingScopes, appId, operationId: newOperationId, brand: account.brand });
+    const card = buildAppScopeMissingCard({
+      missingScopes,
+      appId,
+      operationId: newOperationId,
+      tokenType,
+      brand: account.brand,
+    });
     const newSeq = activeFlow.sequence + 1;
 
     // TOCTOU 修复：先原子迁移（同步操作），再 await 更新卡片
@@ -671,7 +679,7 @@ async function sendAppScopeCard(params: {
 
   const operationId = Date.now().toString(36) + Math.random().toString(36).slice(2);
 
-  const card = buildAppScopeMissingCard({ missingScopes, appId, operationId, brand: account.brand });
+  const card = buildAppScopeMissingCard({ missingScopes, appId, operationId, tokenType, brand: account.brand });
 
   // 创建 CardKit 卡片实体
   const cardId = await createCardEntity({ cfg, card, accountId });
