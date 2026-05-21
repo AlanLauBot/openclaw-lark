@@ -27,6 +27,7 @@
       "feishu_create_doc",
       "feishu_doc_comments",
       "feishu_doc_media",
+      "feishu_doc_permission",
       "feishu_drive_file",
       "feishu_fetch_doc",
       "feishu_get_user",
