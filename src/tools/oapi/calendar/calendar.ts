@@ -76,7 +76,7 @@ export function registerFeishuCalendarCalendarTool(api: OpenClawPluginApi): void
       name: 'feishu_calendar_calendar',
       label: 'Feishu Calendar Management',
       description:
-        '【以用户身份】飞书日历管理工具。用于查询日历列表、获取日历信息、查询主日历。Actions: list（查询日历列表）, get（查询指定日历信息）, primary（查询主日历信息）。',
+        '【以应用身份】飞书日历管理工具。用于查询应用可访问的日历列表、获取日历信息、查询主日历。Actions: list（查询日历列表）, get（查询指定日历信息）, primary（查询主日历信息）。',
       parameters: FeishuCalendarCalendarSchema,
       async execute(_toolCallId: string, params: unknown) {
         const p = params as FeishuCalendarCalendarParams;

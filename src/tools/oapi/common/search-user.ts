@@ -4,14 +4,12 @@
  *
  * feishu_search_user tool -- 搜索员工
  *
- * 通过关键词搜索员工，结果按亲密度排序
- * 使用搜索接口（/open-apis/search/v1/user）
+ * 通过应用身份列出通讯录成员并按关键词过滤。
  */
 
 import type { OpenClawPluginApi } from 'openclaw/plugin-sdk';
 import { Type } from '@sinclair/typebox';
 import { assertLarkOk, createToolContext, handleInvokeErrorWithAutoAuth, json , registerTool } from '../helpers';
-import type { SearchUserData } from '../sdk-types';
 
 // ---------------------------------------------------------------------------
 // Schema
@@ -45,6 +43,45 @@ interface SearchUserParams {
   page_token?: string;
 }
 
+interface TenantUser {
+  open_id?: string;
+  user_id?: string;
+  union_id?: string;
+  name?: string;
+  en_name?: string;
+  nickname?: string;
+  email?: string;
+  enterprise_email?: string;
+  mobile?: string;
+  department_ids?: string[];
+}
+
+interface TenantUserListData {
+  has_more?: boolean;
+  page_token?: string;
+  items?: TenantUser[];
+}
+
+function normalizeSearchText(value: string | undefined): string {
+  return (value ?? '').trim().toLowerCase();
+}
+
+function userMatchesQuery(user: TenantUser, query: string): boolean {
+  const normalizedQuery = normalizeSearchText(query);
+  const fields = [
+    user.name,
+    user.en_name,
+    user.nickname,
+    user.email,
+    user.enterprise_email,
+    user.mobile,
+    user.open_id,
+    user.user_id,
+    user.union_id,
+  ];
+  return fields.some((field) => normalizeSearchText(field).includes(normalizedQuery));
+}
+
 // ---------------------------------------------------------------------------
 // Registration
 // ---------------------------------------------------------------------------
@@ -61,7 +98,7 @@ export function registerSearchUserTool(api: OpenClawPluginApi): void {
       name: 'feishu_search_user',
       label: 'Feishu: Search User',
       description:
-        '搜索员工信息（通过关键词搜索姓名、手机号、邮箱）。' + '返回匹配的员工列表，包含姓名、部门、open_id 等信息。',
+        '【以应用身份】搜索员工信息（通过关键词匹配姓名、手机号、邮箱或用户 ID）。返回匹配的员工列表，包含姓名、部门、open_id 等信息。',
       parameters: SearchUserSchema,
       async execute(_toolCallId: string, params: unknown) {
         const p = params as SearchUserParams;
@@ -70,22 +107,26 @@ export function registerSearchUserTool(api: OpenClawPluginApi): void {
 
           log.info(`search_user: query="${p.query}", page_size=${p.page_size ?? 20}`);
 
-          const requestQuery: Record<string, string> = {
-            query: p.query,
-            page_size: String(p.page_size ?? 20),
-          };
-          if (p.page_token) requestQuery.page_token = p.page_token;
-
-          // contact:user:search is only available with a user access token.
-          const res = await client.invokeByPath('feishu_search_user.default', '/open-apis/search/v1/user', {
-            method: 'GET',
-            query: requestQuery,
-            as: 'user',
-          });
+          const pageSize = p.page_size ?? 20;
+          const res = await client.invoke(
+            'feishu_search_user.default',
+            (sdk, opts) =>
+              sdk.contact.v3.user.list(
+                {
+                  params: {
+                    user_id_type: 'open_id',
+                    page_size: 200,
+                    page_token: p.page_token,
+                  },
+                },
+                opts,
+              ),
+            { as: 'tenant' },
+          );
           assertLarkOk(res);
 
-          const data = res.data as SearchUserData | undefined;
-          const users = data?.users ?? [];
+          const data = res.data as TenantUserListData | undefined;
+          const users = (data?.items ?? []).filter((user) => userMatchesQuery(user, p.query)).slice(0, pageSize);
           const userCount = users.length;
           log.info(`search_user: found ${userCount} users`);
 

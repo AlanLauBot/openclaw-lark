@@ -88,7 +88,7 @@ export type InvokeFn<T> = (sdk: Lark.Client, opts?: LarkRequestOptions, uat?: st
 
 /** invoke() 的选项。 */
 export interface InvokeOptions {
-  /** 强制 token 类型。省略时根据 API meta 自动选择（优先 user）。 */
+  /** 强制 token 类型。省略时默认使用应用身份。 */
   as?: 'user' | 'tenant';
   /** 覆盖 senderOpenId。 */
   userOpenId?: string;
@@ -196,8 +196,8 @@ export class ToolClient {
     // 2. 从 scope.ts 查询 API 需要的 scopes（Required Scopes）
     const requiredScopes = getRequiredScopes(toolAction);
 
-    // 3. 决定 token 类型（默认 user，用户可通过 options.as 覆盖）
-    const tokenType = options?.as ?? 'user';
+    // 3. 决定 token 类型（默认 tenant，用户可通过 options.as 覆盖）
+    const tokenType = options?.as ?? 'tenant';
 
     const skipTenantAppScopePrecheck =
       tokenType === 'tenant' &&
@@ -291,9 +291,9 @@ export class ToolClient {
   async invokeByPath<T = any>(toolAction: ToolActionKey, path: string, options?: InvokeByPathOptions): Promise<T> {
     const fn: InvokeFn<T> = async (_sdk, _opts, uat) => {
       let accessToken = uat;
-      const tokenType: 'user' | 'tenant' = options?.as === 'tenant' ? 'tenant' : 'user';
+      const tokenType: 'user' | 'tenant' = options?.as ?? 'tenant';
 
-      if (!accessToken && options?.as === 'tenant') {
+      if (!accessToken && tokenType === 'tenant') {
         const baseUrl = resolveDomainUrl(this.account.brand);
         const url = `${baseUrl}/open-apis/auth/v3/tenant_access_token/internal`;
         const resp = await fetch(url, {

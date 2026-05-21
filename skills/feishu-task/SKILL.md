@@ -19,7 +19,7 @@ description: |
 ## 🚨 执行前必读
 
 - ✅ **时间格式**：ISO 8601 / RFC 3339（带时区），例如 `2026-02-28T17:00:00+08:00`
-- ✅ **身份授权**：工具支持 `auth_type` 为 `user`（默认，用户身份）或 `tenant`（应用身份）。
+- ✅ **身份授权**：工具支持 `auth_type` 为 `tenant`（默认，应用身份）或 `user`（用户身份）。
 - ✅ **任务 Agent（feishu_task_agent）**：仅支持应用身份（tenant），不支持 user 身份
 - ✅ **current_user_id 强烈建议**：从消息上下文的 SenderId 获取（ou_...），工具会自动添加为 follower（如不在 members 中），确保创建者可以编辑任务
 - ✅ **patch/get 必须**：task_guid
@@ -56,10 +56,10 @@ description: |
 ### 1. 授权身份与可见性 (auth_type)
 
 **工具支持两种调用身份 `auth_type`**：
-- **`user` (默认)**：用户身份（user_access_token）。用于需要严格代表用户操作或查询用户私有任务的场景。
+- **`tenant` (默认)**：应用身份（tenant_access_token）。用于让任务操作归属应用/Bot。如果创建的任务没有把用户加入成员，用户可能看不见。
   - ⚠️ 使用 `user` 身份时，只能查看和编辑**自己是成员的任务**。
   - ⚠️ **如果创建时没把自己加入成员，后续无法编辑该任务**。
-- **`tenant`**：应用身份（tenant_access_token）。当用户身份不满足要求时，使用应用身份。如果创建的任务没有把用户加入成员，用户可能看不见。
+- **`user`**：用户身份（user_access_token）。仅在需要严格代表用户操作或查询用户私有任务时显式使用。
 
 **自动保护机制**：
 - 传入 `current_user_id` 参数（从 SenderId 获取）

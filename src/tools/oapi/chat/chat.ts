@@ -95,7 +95,7 @@ export function registerChatSearchTool(api: OpenClawPluginApi): boolean {
       name: 'feishu_chat',
       label: 'Feishu: Chat Management',
       description:
-        '以用户身份调用飞书群聊管理工具。Actions: search（搜索群列表，支持关键词匹配群名称、群成员）, get（获取指定群的详细信息，包括群名称、描述、头像、群主、权限配置等）。',
+        '以应用身份调用飞书群聊管理工具。Actions: search（搜索群列表，支持关键词匹配群名称、群成员）, get（获取指定群的详细信息，包括群名称、描述、头像、群主、权限配置等）。',
       parameters: FeishuChatSchema,
       async execute(_toolCallId: string, params: unknown) {
         const p = params as FeishuChatParams;
