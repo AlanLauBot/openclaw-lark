@@ -254,7 +254,7 @@ export function registerFeishuBitableAppTableRecordTool(api: OpenClawPluginApi):
       name: 'feishu_bitable_app_table_record',
       label: 'Feishu Bitable Records',
       description:
-        '【以用户身份】飞书多维表格记录（行）管理工具。当用户要求创建/查询/更新/删除记录、搜索数据时使用。\n\n' +
+        '【以应用身份】飞书多维表格记录（行）管理工具。当用户要求创建/查询/更新/删除记录、搜索数据时使用。\n\n' +
         'Actions:\n' +
         '- create（创建单条记录，使用 fields 参数）\n' +
         '- batch_create（批量创建记录，使用 records 数组参数）\n' +

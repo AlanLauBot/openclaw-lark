@@ -2,7 +2,7 @@
  * Copyright (c) 2026 ByteDance Ltd. and/or its affiliates
  * SPDX-License-Identifier: MIT
  *
- * feishu_im_user_message tool -- 以用户身份发送/回复 IM 消息
+ * feishu_im_user_message tool -- 以机器人身份发送/回复 IM 消息
  *
  * Actions: send, reply
  *
@@ -10,7 +10,7 @@
  *   - send:  POST /open-apis/im/v1/messages?receive_id_type=...
  *   - reply: POST /open-apis/im/v1/messages/:message_id/reply
  *
- * 全部以用户身份（user_access_token）调用，scope 来自 real-scope.json。
+ * 全部以机器人身份（tenant_access_token）调用。
  */
 
 import type { OpenClawPluginApi } from 'openclaw/plugin-sdk';
@@ -123,15 +123,15 @@ export function registerFeishuImUserMessageTool(api: OpenClawPluginApi): boolean
     api,
     {
       name: 'feishu_im_user_message',
-      label: 'Feishu: IM User Message',
+      label: 'Feishu: IM Bot Message',
       description:
-        '飞书用户身份 IM 消息工具。**有且仅当用户明确要求以自己身份发消息、回复消息时使用，当没有明确要求时优先使用message系统工具**。' +
+        '飞书机器人身份 IM 消息工具。用于让应用/Bot 主动发送或回复消息；当只是回复当前会话时优先使用 message 系统回复能力。' +
         '\n\nActions:' +
         '\n- send（发送消息）：发送消息到私聊或群聊。私聊用 receive_id_type=open_id，群聊用 receive_id_type=chat_id' +
         '\n- reply（回复消息）：回复指定 message_id 的消息，支持话题回复（reply_in_thread=true）' +
         '\n\n【重要】content 必须是合法 JSON 字符串，格式取决于 msg_type。' +
         '最常用：text 类型 content 为 \'{"text":"消息内容"}\'。' +
-        '\n\n【安全约束】此工具以用户身份发送消息，发出后对方看到的发送者是用户本人。' +
+        '\n\n【安全约束】此工具以机器人身份发送消息，发出后对方看到的发送者是应用/Bot。' +
         '调用前必须先向用户确认：1) 发送对象（哪个人或哪个群）2) 消息内容。' +
         '禁止在用户未明确同意的情况下自行发送消息。',
       parameters: FeishuImMessageSchema,

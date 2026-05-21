@@ -2,7 +2,7 @@
  * Copyright (c) 2026 ByteDance Ltd. and/or its affiliates
  * SPDX-License-Identifier: MIT
  *
- * 消息读取工具集 -- 以用户身份获取/搜索飞书消息
+ * 消息读取工具集 -- 以机器人身份获取/搜索飞书消息
  *
  * 包含：
  *   - feishu_im_user_get_messages       (chat_id / open_id → 会话消息)
@@ -150,7 +150,7 @@ function registerGetMessages(api: OpenClawPluginApi): boolean {
       name: 'feishu_im_user_get_messages',
       label: 'Feishu: Get IM Messages',
       description:
-        '【以用户身份】获取群聊或单聊的历史消息。' +
+        '【以机器人身份】获取群聊或单聊的历史消息。' +
         '\n\n用法：' +
         '\n- 通过 chat_id 获取群聊/单聊消息' +
         '\n- 通过 open_id 获取与指定用户的单聊消息（自动解析 chat_id）' +
@@ -255,7 +255,7 @@ function registerGetThreadMessages(api: OpenClawPluginApi): boolean {
       name: 'feishu_im_user_get_thread_messages',
       label: 'Feishu: Get Thread Messages',
       description:
-        '【以用户身份】获取话题（thread）内的消息列表。' +
+        '【以机器人身份】获取话题（thread）内的消息列表。' +
         '\n\n用法：' +
         '\n- 通过 thread_id（omt_xxx）获取话题内的所有消息' +
         '\n- 支持分页：page_size + page_token' +
@@ -324,7 +324,7 @@ const SearchMessagesSchema = Type.Object({
   ),
   sender_type: Type.Optional(
     StringEnum(['user', 'bot', 'all'], {
-      description: '发送者类型：user / bot / all。默认 user',
+      description: '发送者类型：user / bot / all。默认 user（过滤消息发送者，不影响调用身份）',
     }),
   ),
   chat_type: Type.Optional(
@@ -490,7 +490,7 @@ function registerSearchMessages(api: OpenClawPluginApi): boolean {
       name: 'feishu_im_user_search_messages',
       label: 'Feishu: Search Messages',
       description:
-        '【以用户身份】跨会话搜索飞书消息。' +
+        '【以机器人身份】跨会话搜索飞书消息。' +
         '\n\n用法：' +
         '\n- 按关键词搜索消息内容' +
         '\n- 按发送者、被@用户、消息类型过滤' +

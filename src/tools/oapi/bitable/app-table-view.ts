@@ -119,7 +119,7 @@ export function registerFeishuBitableAppTableViewTool(api: OpenClawPluginApi): v
       name: 'feishu_bitable_app_table_view',
       label: 'Feishu Bitable Views',
       description:
-        '【以用户身份】飞书多维表格视图管理工具。当用户要求创建/查询/更新视图、切换展示方式时使用。Actions: create（创建视图）, get（获取视图详情）, list（列出所有视图）, patch（更新视图）。',
+        '【以应用身份】飞书多维表格视图管理工具。当用户要求创建/查询/更新视图、切换展示方式时使用。Actions: create（创建视图）, get（获取视图详情）, list（列出所有视图）, patch（更新视图）。',
       parameters: FeishuBitableAppTableViewSchema,
       async execute(_toolCallId, params) {
         const p = params as FeishuBitableAppTableViewParams;

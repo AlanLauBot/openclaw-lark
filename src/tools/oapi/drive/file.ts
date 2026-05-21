@@ -308,7 +308,7 @@ export function registerFeishuDriveFileTool(api: OpenClawPluginApi): boolean {
       name: 'feishu_drive_file',
       label: 'Feishu Drive Files',
       description:
-        '【以用户身份】飞书云空间文件管理工具。当用户要求查看云空间(云盘)中的文件列表、获取文件信息、复制/移动/删除文件、上传/下载文件时使用。消息中的文件读写**禁止**使用该工具!' +
+        '【以应用身份】飞书云空间文件管理工具。当用户要求查看云空间(云盘)中的文件列表、获取文件信息、复制/移动/删除文件、上传/下载文件时使用。消息中的文件读写**禁止**使用该工具!' +
         '\n\nActions:' +
         '\n- list（列出文件）：列出文件夹下的文件。不提供 folder_token 时获取根目录清单' +
         "\n- get_meta（批量获取元数据）：批量查询文档元信息，使用 request_docs 数组参数，格式：[{doc_token: '...', doc_type: 'sheet'}]" +

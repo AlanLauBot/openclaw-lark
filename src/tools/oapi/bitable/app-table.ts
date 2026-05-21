@@ -132,7 +132,7 @@ export function registerFeishuBitableAppTableTool(api: OpenClawPluginApi): void 
       name: 'feishu_bitable_app_table',
       label: 'Feishu Bitable Tables',
       description:
-        '【以用户身份】飞书多维表格数据表管理工具。当用户要求创建/查询/管理数据表时使用。' +
+        '【以应用身份】飞书多维表格数据表管理工具。当用户要求创建/查询/管理数据表时使用。' +
         '\n\nActions: create（创建数据表，可选择在创建时传入 fields 数组定义字段，或后续逐个添加）, list（列出所有数据表）, patch（更新数据表）, batch_create（批量创建）。' +
         '\n\n【字段定义方式】支持两种模式：1) 明确需求时，在 create 中通过 table.fields 一次性定义所有字段（减少 API 调用）；2) 探索式场景时，使用默认表 + feishu_bitable_app_table_field 逐步修改字段（更稳定，易调整）。',
       parameters: FeishuBitableAppTableSchema,

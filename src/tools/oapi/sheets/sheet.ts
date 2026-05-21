@@ -484,7 +484,7 @@ export function registerFeishuSheetTool(api: OpenClawPluginApi): boolean {
       name: 'feishu_sheet',
       label: 'Feishu Spreadsheet',
       description:
-        '【以用户身份】飞书电子表格工具。支持创建、读写、查找、导出电子表格。' +
+        '【以应用身份】飞书电子表格工具。支持创建、读写、查找、导出电子表格。' +
         '\n\n电子表格（Sheets）类似 Excel/Google Sheets，与多维表格（Bitable/Airtable）是不同产品。' +
         '\n\n所有 action（除 create 外）均支持传入 url 或 spreadsheet_token，工具会自动解析。支持知识库 wiki URL，自动解析为电子表格 token。' +
         '\n\nActions:' +

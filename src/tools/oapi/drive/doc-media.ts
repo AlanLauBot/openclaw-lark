@@ -413,7 +413,7 @@ export function registerDocMediaTool(api: OpenClawPluginApi): boolean {
       name: 'feishu_doc_media',
       label: 'Feishu: Document Media',
       description:
-        '【以用户身份】文档媒体管理工具。' +
+        '【以应用身份】文档媒体管理工具。' +
         '支持两种操作：' +
         '(1) insert - 在飞书文档末尾插入本地图片或文件（需要文档 ID + 本地文件路径）；' +
         '(2) download - 下载文档素材或画板缩略图到本地（需要资源 token + 输出路径）。' +

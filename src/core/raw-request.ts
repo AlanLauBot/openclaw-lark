@@ -44,7 +44,7 @@ export interface RawLarkRequestOptions {
 function isFormDataBody(body: unknown): boolean {
   return (
     typeof body === 'object' &&
-    body !== null &&
+    body != null &&
     typeof (body as { append?: unknown }).append === 'function' &&
     typeof (body as { entries?: unknown }).entries === 'function'
   );
@@ -108,7 +108,7 @@ export async function rawLarkRequest<T>(options: RawLarkRequestOptions): Promise
   const data = (await resp.json()) as any;
 
   // 飞书 API 统一错误模式：code !== 0
-  if (data.code !== undefined && data.code !== 0) {
+  if (data.code != null && data.code !== 0) {
     const err = new Error(data.msg ?? `Lark API error: code=${data.code}`);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (err as any).code = data.code;

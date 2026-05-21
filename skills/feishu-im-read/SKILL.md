@@ -16,7 +16,7 @@ description: |
 
 ## 执行前必读
 
-- 该 Skill 中的所有消息读取工具均以用户身份调用，只能读取用户有权限的会话
+- 该 Skill 中的所有消息读取工具默认以机器人/应用身份调用，只能读取应用有权限的会话
 - `feishu_im_user_get_messages` 中 `open_id` 和 `chat_id` 必须二选一
 - 消息中出现 `thread_id` 时，根据用户意图判断是否用 `feishu_im_user_get_thread_messages` 读取话题内回复
 - 以用户身份读取后，如果消息内容中出现资源标记时，用 `feishu_im_user_fetch_resource` 下载，需要 `message_id` + `file_key` + `type`
@@ -70,7 +70,7 @@ description: |
 | `chat_id` | 限定搜索范围的会话 ID |
 | `mention_ids` | 被@用户的 open_id 列表 |
 | `message_type` | 消息类型：file / image / media |
-| `sender_type` | 发送者类型：user / bot / all（默认 user） |
+| `sender_type` | 消息发送者类型过滤：user / bot / all（默认 user，不影响工具调用身份） |
 | `chat_type` | 会话类型：group / p2p |
 
 搜索结果每条消息额外包含 `chat_id`、`chat_type`（p2p/group）、`chat_name`。单聊消息还有 `chat_partner`（对方 open_id 和名字）。

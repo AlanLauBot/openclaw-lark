@@ -7,7 +7,7 @@
  * 将飞书 IM API 返回的原始消息对象转换为 AI 可读的 JSON 格式。
  * 由 feishu_im_user_get_messages 和 feishu_im_user_get_thread_messages 共享。
  *
- * 所有 API 调用均通过 UAT（用户身份）进行。
+ * 消息读取工具默认通过 TAT（机器人身份）进行。
  */
 
 import type { LarkAccount } from '../../../core/types';

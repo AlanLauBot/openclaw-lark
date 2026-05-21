@@ -112,7 +112,7 @@ export function registerFeishuBitableAppTool(api: OpenClawPluginApi): void {
       name: 'feishu_bitable_app',
       label: 'Feishu Bitable Apps',
       description:
-        '【以用户身份】飞书多维表格应用管理工具。当用户要求创建/查询/管理多维表格时使用。Actions: create（创建多维表格）, get（获取多维表格元数据）, list（列出多维表格）, patch（更新元数据）, delete（删除多维表格）, copy（复制多维表格）。',
+        '【以应用身份】飞书多维表格应用管理工具。当用户要求创建/查询/管理多维表格时使用。Actions: create（创建多维表格）, get（获取多维表格元数据）, list（列出多维表格）, patch（更新元数据）, delete（删除多维表格）, copy（复制多维表格）。',
       parameters: FeishuBitableAppSchema,
       async execute(_toolCallId, params) {
         const p = params as FeishuBitableAppParams;

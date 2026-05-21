@@ -66,7 +66,7 @@ export function registerFeishuCalendarFreebusyTool(api: OpenClawPluginApi): void
       name: 'feishu_calendar_freebusy',
       label: 'Feishu Calendar Free/Busy Status',
       description:
-        '【以用户身份】飞书日历忙闲查询工具。当用户要求查询某时间段内某人是否空闲、查看忙闲状态时使用。支持批量查询 1-10 个用户的主日历忙闲信息，用于安排会议时间。',
+        '【以应用身份】飞书日历忙闲查询工具。当用户要求查询某时间段内某人是否空闲、查看忙闲状态时使用。支持批量查询 1-10 个用户的主日历忙闲信息，用于安排会议时间。',
       parameters: FeishuCalendarFreebusySchema,
       async execute(_toolCallId, params) {
         const p = params as FeishuCalendarFreebusyParams;

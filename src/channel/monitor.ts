@@ -9,9 +9,9 @@
  * appropriate handlers.
  */
 
+import * as http from 'node:http';
 import type { ClawdbotConfig, RuntimeEnv } from 'openclaw/plugin-sdk';
 import type { HistoryEntry } from 'openclaw/plugin-sdk/reply-history';
-import * as http from 'node:http';
 import * as Lark from '@larksuiteoapi/node-sdk';
 import { getEnabledLarkAccounts, getLarkAccount } from '../core/accounts';
 import { LarkClient } from '../core/lark-client';

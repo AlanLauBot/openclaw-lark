@@ -10,11 +10,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { OpenClawPluginApi } from 'openclaw/plugin-sdk';
 import type { TSchema } from '@sinclair/typebox';
-import { createToolContext, formatToolResult, getFirstAccount, registerTool } from '../helpers';
+import { createToolContext, formatToolResult, registerTool } from '../helpers';
 import { handleInvokeErrorWithAutoAuth } from '../oapi/helpers';
 import { getUserAgent } from '../../core/version';
 import { mcpDomain } from '../../core/domains';
-import type { LarkBrand } from '../../core/types';
+import type { ConfiguredLarkAccount, LarkBrand } from '../../core/types';
 import type { ToolClient } from '../../core/tool-client';
 
 // ---------------------------------------------------------------------------
@@ -158,16 +158,7 @@ function resolveDomainUrl(brand?: LarkBrand): string {
   return map[brand ?? ''] ?? `https://${brand}`;
 }
 
-async function getTenantAccessToken(config: OpenClawPluginApi['config']): Promise<string> {
-  if (!config) {
-    throw new Error('OpenClaw config 未加载，无法获取 tenant_access_token');
-  }
-
-  const account = getFirstAccount(config);
-  if (!account?.appId || !account?.appSecret) {
-    throw new Error('Feishu account appId/appSecret 未配置，无法获取 tenant_access_token');
-  }
-
+async function getTenantAccessToken(account: ConfiguredLarkAccount): Promise<string> {
   const baseUrl = resolveDomainUrl(account.brand);
   const url = `${baseUrl}/open-apis/auth/v3/tenant_access_token/internal`;
   const resp = await fetch(url, {
@@ -417,7 +408,7 @@ export function registerMcpTool<T extends Record<string, unknown>>(
               let tenantAccessToken: string | undefined;
               if (!uat) {
                 try {
-                  tenantAccessToken = await getTenantAccessToken(api.config);
+                  tenantAccessToken = await getTenantAccessToken(client.account);
                 } catch (err) {
                   log.warn?.(
                     `tenant_access_token mint failed for ${config.mcpToolName}: ${err instanceof Error ? err.message : String(err)}`,

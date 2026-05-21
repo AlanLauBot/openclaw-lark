@@ -188,7 +188,7 @@ export function registerFeishuSearchDocWikiTool(api: OpenClawPluginApi): boolean
       name: 'feishu_search_doc_wiki',
       label: 'Feishu Document & Wiki Search',
       description:
-        '【以用户身份】飞书文档与 Wiki 统一搜索工具。同时搜索云空间文档和知识库 Wiki。Actions: search。' +
+        '【以应用身份】飞书文档与 Wiki 统一搜索工具。同时搜索云空间文档和知识库 Wiki。Actions: search。' +
         '【重要】query 参数是搜索关键词（必填），filter 参数可选。' +
         '【重要】filter 不传时，搜索所有文档和 Wiki；传了则同时对文档和 Wiki 应用相同的过滤条件。' +
         '【重要】支持按文档类型、创建者、创建时间、打开时间等多维度筛选。' +

@@ -117,7 +117,7 @@ const FeishuTaskTaskSchema = Type.Union([
     auth_type: Type.Optional(
       StringEnum(['tenant', 'user'], {
         description:
-          '授权类型，默认 user。使用 user 时为用户身份（只能查看/操作自己有权限的任务），使用 tenant 时为应用身份。',
+          '授权类型，默认 tenant。使用 tenant 时为应用身份；使用 user 时为用户身份（只能查看/操作自己有权限的任务）。',
       }),
     ),
     user_id_type: Type.Optional(
@@ -133,7 +133,7 @@ const FeishuTaskTaskSchema = Type.Union([
     }),
     auth_type: Type.Optional(
       StringEnum(['tenant', 'user'], {
-        description: '授权类型，默认 user。',
+        description: '授权类型，默认 tenant。',
       }),
     ),
     user_id_type: Type.Optional(
@@ -166,7 +166,7 @@ const FeishuTaskTaskSchema = Type.Union([
     ),
     auth_type: Type.Optional(
       StringEnum(['tenant', 'user'], {
-        description: '授权类型，默认 user。',
+        description: '授权类型，默认 tenant。',
       }),
     ),
     user_id_type: Type.Optional(
@@ -256,7 +256,7 @@ const FeishuTaskTaskSchema = Type.Union([
     ),
     auth_type: Type.Optional(
       StringEnum(['tenant', 'user'], {
-        description: '授权类型，默认 user。',
+        description: '授权类型，默认 tenant。',
       }),
     ),
     user_id_type: Type.Optional(
@@ -290,7 +290,7 @@ const FeishuTaskTaskSchema = Type.Union([
     ),
     auth_type: Type.Optional(
       StringEnum(['tenant', 'user'], {
-        description: '授权类型，默认 user。',
+        description: '授权类型，默认 tenant。',
       }),
     ),
     user_id_type: Type.Optional(
