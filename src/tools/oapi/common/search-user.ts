@@ -76,10 +76,11 @@ export function registerSearchUserTool(api: OpenClawPluginApi): void {
           };
           if (p.page_token) requestQuery.page_token = p.page_token;
 
+          // contact:user:search is only available with a user access token.
           const res = await client.invokeByPath('feishu_search_user.default', '/open-apis/search/v1/user', {
             method: 'GET',
             query: requestQuery,
-            as: 'tenant',
+            as: 'user',
           });
           assertLarkOk(res);
 

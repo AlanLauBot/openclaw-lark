@@ -201,9 +201,7 @@ export class ToolClient {
 
     const skipTenantAppScopePrecheck =
       tokenType === 'tenant' &&
-      (toolAction === 'feishu_create_doc.default' ||
-        toolAction === 'feishu_update_doc.default' ||
-        toolAction === 'feishu_search_user.default');
+      (toolAction === 'feishu_create_doc.default' || toolAction === 'feishu_update_doc.default');
 
     // ---- App Granted Scopes 检查（应用已开通的权限）----
     // UAT 调用额外检查 offline_access（OAuth Device Flow 的前提权限），
@@ -464,10 +462,6 @@ export class ToolClient {
       (err as any)?.code ?? (err as any)?.response?.data?.code;
 
     if (code === LARK_ERROR.APP_SCOPE_MISSING) {
-      if (tokenType === 'tenant' && apiName === 'feishu_search_user.default') {
-        return;
-      }
-
       // 应用 scope 不足 — 清缓存（管理员可能刚开通）
       invalidateAppScopeCache(this.account.appId);
       throw new AppScopeMissingError(
