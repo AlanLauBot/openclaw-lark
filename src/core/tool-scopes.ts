@@ -455,9 +455,21 @@ export const SENSITIVE_SCOPES = [
 ] as const;
 
 /**
+ * Scopes that require a user access token.
+ *
+ * Keep this list limited to scopes that can be verified from Lark schema/docs
+ * or real API behavior. Most OpenAPI schemas expose token support at the API
+ * level through `accessTokens`; search scopes are not fully covered by the
+ * current lark-cli schema registry, so known user-only search scopes live here.
+ */
+export const USER_ONLY_SCOPES = ['search:message'] as const;
+
+/**
  * 高敏感权限类型
  */
 export type SensitiveScope = (typeof SENSITIVE_SCOPES)[number];
+
+export type UserOnlyScope = (typeof USER_ONLY_SCOPES)[number];
 
 /**
  * 过滤掉高敏感权限

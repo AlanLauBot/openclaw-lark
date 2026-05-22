@@ -43,6 +43,17 @@ interface CacheEntry {
   fetchedAt: number;
 }
 
+function normalizeScopeTokenType(tokenType: string): 'user' | 'tenant' | undefined {
+  if (tokenType === 'user' || tokenType === 'user_access_token') return 'user';
+  if (tokenType === 'tenant' || tokenType === 'tenant_access_token') return 'tenant';
+  return undefined;
+}
+
+function scopeSupportsTokenType(scope: { token_types?: string[] }, tokenType: 'user' | 'tenant'): boolean {
+  if (!scope.token_types || !Array.isArray(scope.token_types)) return true;
+  return scope.token_types.some((value) => normalizeScopeTokenType(value) === tokenType);
+}
+
 // ---------------------------------------------------------------------------
 // Cache
 // ---------------------------------------------------------------------------
@@ -81,10 +92,8 @@ export async function getAppGrantedScopes(
     // 从缓存中过滤出支持当前 token 类型的 scope
     return cached.rawScopes
       .filter((s) => {
-        if (tokenType && s.token_types && Array.isArray(s.token_types)) {
-          return s.token_types.includes(tokenType);
-        }
-        return true;
+        if (!tokenType) return true;
+        return scopeSupportsTokenType(s, tokenType);
       })
       .map((s) => s.scope);
   }
@@ -120,10 +129,8 @@ export async function getAppGrantedScopes(
     // 4. 根据 tokenType 过滤
     const scopes = validScopes
       .filter((s) => {
-        if (tokenType && s.token_types && Array.isArray(s.token_types)) {
-          return s.token_types.includes(tokenType);
-        }
-        return true;
+        if (!tokenType) return true;
+        return scopeSupportsTokenType(s, tokenType);
       })
       .map((s) => s.scope);
 

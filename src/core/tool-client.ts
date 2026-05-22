@@ -39,7 +39,7 @@ import { getStoredToken } from './token-store';
 import { getAppGrantedScopes, invalidateAppScopeCache, missingScopes } from './app-scope-checker';
 import { getAppOwnerFallback } from './app-owner-fallback';
 import { larkLogger } from './lark-logger';
-import { type ToolActionKey, getRequiredScopes } from './scope-manager';
+import { type ToolActionKey, USER_ONLY_SCOPES, getRequiredScopes } from './scope-manager';
 import { rawLarkRequest, resolveDomainUrl } from './raw-request';
 import { assertOwnerAccessStrict } from './owner-policy';
 import {
@@ -64,6 +64,16 @@ export {
 export type { ScopeErrorInfo, AuthHint, TryInvokeResult };
 
 const tcLog = larkLogger('core/tool-client');
+
+const USER_ONLY_SCOPE_SET = new Set<string>(USER_ONLY_SCOPES);
+
+function isUserOnlyScope(scope: string): boolean {
+  return USER_ONLY_SCOPE_SET.has(scope) || scope.includes('as_user');
+}
+
+function hasUserOnlyScope(scopes: string[]): boolean {
+  return scopes.some((scope) => isUserOnlyScope(scope));
+}
 
 // ---------------------------------------------------------------------------
 // Types
@@ -197,7 +207,14 @@ export class ToolClient {
     const requiredScopes = getRequiredScopes(toolAction);
 
     // 3. 决定 token 类型（默认 tenant，用户可通过 options.as 覆盖）
-    const tokenType = options?.as ?? 'tenant';
+    let tokenType = options?.as ?? 'tenant';
+    if (tokenType === 'tenant' && hasUserOnlyScope(requiredScopes)) {
+      tokenType = 'user';
+      tcLog.info(`Switching tool call to user token because required scopes are user-only`, {
+        toolAction,
+        requiredScopes,
+      });
+    }
 
     const skipTenantAppScopePrecheck =
       tokenType === 'tenant' &&

@@ -490,7 +490,7 @@ function registerSearchMessages(api: OpenClawPluginApi): boolean {
       name: 'feishu_im_user_search_messages',
       label: 'Feishu: Search Messages',
       description:
-        '【以机器人身份】跨会话搜索飞书消息。' +
+        '跨会话搜索飞书消息。默认使用机器人身份；当 search:message 仅支持用户身份时，工具层会自动切换到用户授权。' +
         '\n\n用法：' +
         '\n- 按关键词搜索消息内容' +
         '\n- 按发送者、被@用户、消息类型过滤' +
