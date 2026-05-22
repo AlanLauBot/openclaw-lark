@@ -462,7 +462,12 @@ export const SENSITIVE_SCOPES = [
  * level through `accessTokens`; search scopes are not fully covered by the
  * current lark-cli schema registry, so known user-only search scopes live here.
  */
-export const USER_ONLY_SCOPES = ['search:message'] as const;
+export const USER_ONLY_SCOPES = [
+  'contact:user:search',
+  'im:message.group_msg:get_as_user',
+  'im:message.p2p_msg:get_as_user',
+  'search:message',
+] as const;
 
 /**
  * 高敏感权限类型
