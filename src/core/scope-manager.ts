@@ -39,12 +39,12 @@
  * ```
  */
 
-import { TOOL_SCOPES, type ToolActionKey, type ToolScopeMapping } from './tool-scopes';
+import { TOOL_SCOPES, type ToolActionKey, type ToolScopeMapping, USER_ONLY_SCOPES } from './tool-scopes';
 
 // ===== 导出类型和数据 =====
 
 export type { ToolActionKey, ToolScopeMapping };
-export { TOOL_SCOPES };
+export { TOOL_SCOPES, USER_ONLY_SCOPES };
 
 // ===== 函数：Required Scopes（API 需要的权限）=====
 
