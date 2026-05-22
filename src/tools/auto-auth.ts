@@ -117,6 +117,14 @@ const AUTH_UPDATE_DEBOUNCE_MS = 500;
  */
 const AUTH_COOLDOWN_MS = 30_000;
 
+function isAutoAuthError(err: unknown): boolean {
+  return (
+    err instanceof UserAuthRequiredError ||
+    err instanceof UserScopeInsufficientError ||
+    err instanceof AppScopeMissingError
+  );
+}
+
 /**
  * 将授权请求入队到防抖缓冲区。
  *
@@ -1106,8 +1114,8 @@ export async function handleInvokeErrorWithAutoAuth(err: unknown, cfg: ClawdbotC
         log.warn(`sendAppScopeCard failed: ${cardErr}, falling back`);
       }
     }
-  } else {
-    log.error(`ticket not found ${err}`);
+  } else if (isAutoAuthError(err)) {
+    log.warn(`auth error requires a Lark ticket, but no ticket was available: ${err}`);
   }
   return json({
     error: formatLarkError(err),
