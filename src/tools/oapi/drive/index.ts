@@ -30,17 +30,19 @@ export function registerFeishuDriveTools(api: OpenClawPluginApi): void {
   }
 
   const toolsCfg = resolveAnyEnabledToolsConfig(accounts);
-  if (!toolsCfg.drive) {
-    api.logger.debug?.('feishu_drive: drive tool disabled in all accounts');
+  if (!toolsCfg.drive && !toolsCfg.perm) {
+    api.logger.debug?.('feishu_drive: drive and permission tools disabled in all accounts');
     return;
   }
 
   // 注册所有工具
   const registered: string[] = [];
-  if (registerFeishuDriveFileTool(api)) registered.push('feishu_drive_file');
-  if (registerDocCommentsTool(api)) registered.push('feishu_doc_comments');
-  if (registerDocMediaTool(api)) registered.push('feishu_doc_media');
-  if (registerDocPermissionTool(api)) registered.push('feishu_doc_permission');
+  if (toolsCfg.drive) {
+    if (registerFeishuDriveFileTool(api)) registered.push('feishu_drive_file');
+    if (registerDocCommentsTool(api)) registered.push('feishu_doc_comments');
+    if (registerDocMediaTool(api)) registered.push('feishu_doc_media');
+  }
+  if (toolsCfg.perm && registerDocPermissionTool(api)) registered.push('feishu_doc_permission');
   if (registered.length > 0) {
     api.logger.debug?.(`feishu_drive: Registered ${registered.join(', ')}`);
   }

@@ -308,7 +308,7 @@ export class ToolClient {
   async invokeByPath<T = any>(toolAction: ToolActionKey, path: string, options?: InvokeByPathOptions): Promise<T> {
     const fn: InvokeFn<T> = async (_sdk, _opts, uat) => {
       let accessToken = uat;
-      const tokenType: 'user' | 'tenant' = options?.as ?? 'tenant';
+      const tokenType: 'user' | 'tenant' = uat ? 'user' : (options?.as ?? 'tenant');
 
       if (!accessToken && tokenType === 'tenant') {
         const baseUrl = resolveDomainUrl(this.account.brand);
